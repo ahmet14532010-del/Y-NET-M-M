@@ -1,0 +1,2818 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1e3a5f">
+<title>Site Yönetim Sistemi</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{font-family:'Inter',sans-serif;box-sizing:border-box;}
+body{margin:0;padding:0;background:#f0f4f8;}
+.screen{display:none;} .screen.active{display:flex;}
+.slide-up{animation:slideUp .35s cubic-bezier(.4,0,.2,1);}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.sidebar{width:220px;min-width:220px;background:#1e3a5f;min-height:100vh;flex-shrink:0;}
+.sidebar-item{display:flex;align-items:center;gap:12px;padding:12px 20px;color:#a8c4e0;cursor:pointer;border-radius:8px;margin:2px 8px;transition:all .2s;}
+.sidebar-item:hover,.sidebar-item.active{background:#2d5a8e;color:#fff;}
+.sidebar-item i{width:20px;text-align:center;}
+.main-content{flex:1;overflow-y:auto;min-height:100vh;}
+.topbar{background:#fff;padding:12px 24px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:10;}
+.search-box{flex:1;max-width:300px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px;}
+.search-box input{border:none;background:transparent;outline:none;font-size:14px;color:#64748b;width:100%;}
+.badge{background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.status-paid{background:#dcfce7;color:#16a34a;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;}
+.status-unpaid{background:#fee2e2;color:#dc2626;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:4px;}
+.status-waiting{background:#fef9c3;color:#ca8a04;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;}
+.status-repair{background:#dbeafe;color:#2563eb;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;}
+.btn-primary{background:#1e3a5f;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;}
+.btn-primary:hover{background:#2d5a8e;}
+.btn-outline{background:#fff;color:#1e3a5f;border:1.5px solid #1e3a5f;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-outline:hover{background:#1e3a5f;color:#fff;}
+.btn-red{background:#dc2626;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.table-row{display:grid;align-items:center;padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;}
+.table-row:hover{background:#f8fafc;}
+.admin-table-row{grid-template-columns:32px 80px 1fr 80px 100px 80px 100px;}
+.resident-table-row{grid-template-columns:100px 80px 120px 1fr 120px;}
+.progress-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none;align-items:center;justify-content:center;padding:16px;pointer-events:none;}
+.modal-overlay.open{display:flex;pointer-events:auto;}
+.modal-box{background:#fff;border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.form-input{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;outline:none;transition:border .2s;}
+.form-input:focus{border-color:#1e3a5f;}
+.form-label{font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block;}
+.tab-btn{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .2s;}
+.tab-btn.active{background:#1e3a5f;color:#fff;}
+.poll-bar{height:10px;border-radius:5px;transition:width .5s;}
+/* Mobile sidebar overlay */
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;pointer-events:none;}
+.mob-overlay.open{display:block;pointer-events:auto;}
+
+/* ===== MOBİL RESPONSIVE ===== */
+@media(max-width:768px){
+  /* Sidebar gizle, hamburger ile aç */
+  .sidebar{position:fixed;left:-240px;top:0;height:100%;z-index:50;transition:left .3s;width:240px;min-width:240px;overflow-y:auto;}
+  .sidebar.open{left:0;}
+  .mob-overlay.open{display:block;}
+  #mob-menu-btn,#mob-menu-btn-res{display:block !important;}
+
+  /* Main content tam genişlik */
+  .main-content{width:100%;min-width:0;}
+
+  /* Topbar */
+  .topbar{padding:10px 12px;gap:8px;}
+  .search-box{max-width:160px;padding:6px 10px;}
+
+  /* Admin ana sayfa — 3 kart tek sütun */
+  #admin-page-home > div:first-child{grid-template-columns:1fr !important;}
+
+  /* Aidat listesi — sadece önemli sütunlar */
+  #admin-aidat-list > div,
+  #admin-aidat-full-list > div{
+    grid-template-columns:1fr 90px 80px !important;
+  }
+  #admin-aidat-list > div > div:nth-child(1),
+  #admin-aidat-list > div > div:nth-child(3),
+  #admin-aidat-list > div > div:nth-child(4),
+  #admin-aidat-full-list > div > div:nth-child(1),
+  #admin-aidat-full-list > div > div:nth-child(3),
+  #admin-aidat-full-list > div > div:nth-child(4){display:none;}
+
+  /* Alt 2 kolon → tek sütun */
+  #admin-page-home > div:last-child{grid-template-columns:1fr !important;}
+
+  /* Sakin ana sayfa kartları */
+  #res-page-home > div:first-child{grid-template-columns:1fr !important;}
+  #res-page-home > div:last-child{grid-template-columns:1fr !important;}
+
+  /* Ödeme tablosu */
+  .resident-table-row{grid-template-columns:80px 70px 100px 1fr !important;}
+
+  /* Mesaj sayfası */
+  #admin-page-mesajlar > div{grid-template-columns:1fr !important;}
+  #admin-page-mesajlar > div > div:first-child{max-height:200px;}
+
+  /* Gelir/gider kartlar */
+  #admin-page-gelir > div:first-child{grid-template-columns:1fr !important;}
+
+  /* Bilgi kartı */
+  #res-page-bilgi > div{grid-template-columns:1fr !important;}
+
+  /* Borçlar özet */
+  #res-borclar-ozet{grid-template-columns:1fr 1fr !important;}
+
+  /* Güncel durum grid */
+  #res-durum-content > div > div[style*="grid-template-columns"]{grid-template-columns:1fr 1fr 1fr !important;}
+
+  /* Modal tam ekran */
+  .modal-box{padding:20px;border-radius:12px;}
+  .modal-overlay{padding:12px;}
+
+  /* Auth ekranlar */
+  .auth-screen{padding:28px 16px;}
+  .kayit-btn{font-size:18px;padding:14px;}
+
+  /* Sakinler listesi */
+  #sakinler-list > div{grid-template-columns:1fr 70px 80px 90px !important;}
+  #sakinler-list > div > div:nth-child(4),
+  #sakinler-list > div > div:nth-child(5){display:none;}
+
+  /* Gelir gider liste */
+  #gelir-gider-list > div{grid-template-columns:80px 1fr 80px !important;}
+  #gelir-gider-list > div > div:last-child{display:none;}
+
+  /* Padding küçült */
+  .admin-page,.res-page{padding:14px !important;}
+
+  /* Duyuru/oylama tab */
+  .tab-btn{padding:7px 12px;font-size:12px;}
+
+  /* Arıza listesi */
+  #admin-ariza-full-list > div{flex-wrap:wrap;}
+
+  /* Scroll yatay tablolar */
+  [style*="overflow-x:auto"]{-webkit-overflow-scrolling:touch;}
+}
+
+/* Küçük telefon (≤380px) */
+@media(max-width:380px){
+  .role-circle{width:90px;height:90px;font-size:11px;}
+  .role-circle i{font-size:22px !important;}
+  .auth-screen{padding:20px 12px;}
+  .sidebar-item span{font-size:12px;}
+}
+
+/* Tablet (769px–1024px) */
+@media(min-width:769px) and (max-width:1024px){
+  .sidebar{width:180px;min-width:180px;}
+  #admin-page-home > div:first-child{grid-template-columns:1fr 1fr !important;}
+  #admin-page-home > div:last-child{grid-template-columns:1fr 240px !important;}
+}
+/* Auth screens */
+.auth-screen{min-height:100vh;background:#fff;flex-direction:column;align-items:center;justify-content:flex-start;padding:40px 24px;}
+.role-circle{width:110px;height:110px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s,box-shadow .2s;font-weight:700;font-size:13px;text-align:center;gap:6px;}
+.role-circle:hover{transform:scale(1.05);box-shadow:0 8px 24px rgba(0,0,0,.15);}
+.kayit-btn{width:100%;max-width:360px;padding:18px;background:#fff;border:none;border-bottom:4px solid #dc2626;font-size:22px;font-weight:800;color:#1e3a5f;letter-spacing:2px;cursor:pointer;margin-top:auto;}
+.pass-rule{font-size:11.5px;color:#dc2626;padding:2px 0;transition:color .2s;}
+.pass-rule.ok{color:#16a34a;}
+.input-error{border-color:#dc2626 !important;}
+</style>
+</head>
+<body>
+
+<!-- ===== SCREEN 1: ROL SEÇİM ===== -->
+<div id="screen-role" class="screen active auth-screen">
+  <h1 style="font-size:20px;font-weight:700;color:#1e3a5f;letter-spacing:1px;margin-bottom:48px;text-align:center;">SİTE YÖNETİM SİSTEMİ</h1>
+  <div style="display:flex;gap:32px;align-items:center;justify-content:center;margin-bottom:48px;">
+    <!-- Yönetici: koyu dolu daire -->
+    <div class="role-circle" style="background:#1e3a5f;color:#fff;box-shadow:0 4px 16px rgba(30,58,95,.35);" onclick="selectRole('admin')">
+      <i class="fa-solid fa-building-columns" style="font-size:28px;"></i>
+      <span>YÖNETİCİ<br>GİRİŞİ</span>
+    </div>
+    <!-- Sakin: açık/outline daire -->
+    <div class="role-circle" style="background:#f0f6ff;color:#1e3a5f;border:2.5px solid #c7d9f0;box-shadow:0 2px 8px rgba(30,58,95,.10);" onclick="selectRole('resident')">
+      <i class="fa-solid fa-house" style="font-size:28px;color:#4a7ab5;"></i>
+      <span style="color:#4a7ab5;">SAKİN<br>GİRİŞİ</span>
+    </div>
+  </div>
+  <button class="kayit-btn" onclick="goRegister('admin')">KAYIT OL</button>
+</div>
+<div id="screen-login" class="screen auth-screen">
+  <h1 style="font-size:20px;font-weight:700;color:#1e3a5f;letter-spacing:1px;margin-bottom:28px;text-align:center;">SİTE YÖNETİM SİSTEMİ</h1>
+  <!-- Seçilen rol göstergesi -->
+  <div id="login-role-badge" style="display:flex;align-items:center;gap:10px;background:#f0f6ff;border:1.5px solid #c7d9f0;border-radius:12px;padding:10px 20px;margin-bottom:20px;">
+    <div id="login-role-icon" style="width:40px;height:40px;border-radius:50%;background:#1e3a5f;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;"></div>
+    <div>
+      <div id="login-role-label" style="font-weight:700;color:#1e3a5f;font-size:14px;"></div>
+      <div style="font-size:12px;color:#94a3b8;">Giriş yapıyorsunuz</div>
+    </div>
+  </div>
+  <div class="slide-up" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;">
+    <div style="position:relative;">
+      <i class="fa-solid fa-id-card" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+      <input id="login-tc" class="form-input" style="padding-left:40px;" placeholder="T.C. Kimlik Numarası" maxlength="11" type="text">
+    </div>
+    <div style="position:relative;">
+      <i class="fa-solid fa-lock" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+      <input id="login-pass" class="form-input" style="padding-left:40px;" placeholder="Şifre" type="password">
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <button class="btn-primary" style="flex:1;padding:12px;" onclick="doLogin()">Giriş Yap</button>
+      <a href="#" onclick="sifremiUnuttum();return false;" style="font-size:12px;color:#64748b;white-space:nowrap;text-decoration:underline;">Şifremi Unuttum?</a>
+    </div>
+    <div id="login-error" style="color:#dc2626;font-size:13px;text-align:center;display:none;">TC veya şifre hatalı.</div>
+  </div>
+  <button class="kayit-btn" onclick="goRegister(currentRole||'resident')">KAYIT OL</button>
+  <button onclick="showScreen('screen-role')" style="margin-top:12px;background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;">← Geri Dön</button>
+</div>
+
+<!-- ===== SCREEN 3: KAYIT OL ===== -->
+<div id="screen-register" class="screen auth-screen">
+  <h1 style="font-size:18px;font-weight:800;color:#1e3a5f;letter-spacing:1px;margin-bottom:20px;text-align:center;">YENİ KAYIT OLUŞTUR</h1>
+  <div class="slide-up" style="width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;">
+
+    <!-- Rol Seçici -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;">
+      <button id="reg-btn-admin" onclick="setRegRole('admin')"
+        style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;border:2px solid #1e3a5f;background:#1e3a5f;color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;">
+        <i class="fa-solid fa-building-columns"></i> Yönetici
+      </button>
+      <button id="reg-btn-resident" onclick="setRegRole('resident')"
+        style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;border:2px solid #c7d9f0;background:#f0f6ff;color:#4a7ab5;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;">
+        <i class="fa-solid fa-house"></i> Sakin
+      </button>
+    </div>
+    <!-- Seçilen rol etiketi -->
+    <div id="reg-role-label" style="text-align:center;font-size:12px;color:#64748b;margin-bottom:2px;">
+      Kayıt türü: <span id="reg-role-text" style="font-weight:700;color:#1e3a5f;">Yönetici</span>
+    </div>
+
+    <div style="position:relative;">
+      <i class="fa-solid fa-user" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+      <input id="reg-name" class="form-input" style="padding-left:40px;" placeholder="Ad Soyad">
+    </div>
+    <div style="position:relative;">
+      <i class="fa-solid fa-at" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+      <input id="reg-email" class="form-input" style="padding-left:40px;" placeholder="E-posta Adresi" type="email">
+    </div>
+    <div style="position:relative;">
+      <i class="fa-solid fa-phone" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+      <input id="reg-phone" class="form-input" style="padding-left:40px;" placeholder="+90(5__ ___ __ __)" type="tel" maxlength="18" oninput="formatPhone(this)">
+    </div>
+    <div style="position:relative;">
+      <i class="fa-solid fa-id-card" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+      <input id="reg-tc" class="form-input" style="padding-left:40px;" placeholder="T.C. Kimlik Numarası" maxlength="11" oninput="validateTC(this)">
+      <div id="reg-tc-err" style="font-size:11.5px;color:#dc2626;margin-top:4px;display:none;padding-left:4px;">T.C. Kimlik No 11 haneli olmalıdır.</div>
+    </div>
+    <!-- Blok-Daire: sadece sakin için göster -->
+    <div id="reg-apt-row" style="position:relative;display:none;">
+      <i class="fa-solid fa-building" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+      <input id="reg-apt" class="form-input" style="padding-left:40px;" placeholder="Blok-Daire No. (Örn: A1-D4)">
+    </div>
+    <div>
+      <div style="position:relative;">
+        <i class="fa-solid fa-lock" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+        <input id="reg-pass" class="form-input" style="padding-left:40px;padding-right:40px;" placeholder="Şifre Oluştur" type="password" oninput="validatePass(this)">
+        <button type="button" onclick="togglePassVis('reg-pass','reg-pass-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;">
+          <i class="fa-solid fa-eye" id="reg-pass-eye"></i>
+        </button>
+      </div>
+      <!-- Şifre kuralları -->
+      <div style="margin-top:8px;padding:10px 12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;">
+        <div style="font-size:11.5px;color:#64748b;font-weight:600;margin-bottom:6px;">Şifre gereksinimleri:</div>
+        <div id="rule-len"  class="pass-rule">✗ En az 7 karakter</div>
+        <div id="rule-upper" class="pass-rule">✗ En az 1 büyük harf (A-Z)</div>
+        <div id="rule-lower" class="pass-rule">✗ En az 1 küçük harf (a-z)</div>
+        <div id="rule-digit" class="pass-rule">✗ En az 1 rakam (0-9)</div>
+        <div id="rule-special" class="pass-rule">✗ En az 1 özel karakter (/*-+,.&lt;!'^%&amp;/)</div>
+      </div>
+    </div>
+    <button class="kayit-btn" style="margin-top:8px;" onclick="doRegister()">KAYIT OL</button>
+    <button onclick="showScreen('screen-role')" style="background:none;border:none;color:#64748b;font-size:14px;cursor:pointer;padding:8px;">Vazgeç</button>
+  </div>
+</div>
+
+<!-- ===== SCREEN 4: YÖNETİCİ PANELİ ===== -->
+<div id="screen-admin" class="screen" style="flex-direction:row;min-height:100vh;background:#f0f4f8;overflow-x:hidden;">
+  <!-- Sidebar -->
+  <div class="sidebar" id="admin-sidebar" style="background:#1a2e4a;display:flex;flex-direction:column;min-height:100vh;width:210px;min-width:210px;">
+    <!-- Logo -->
+    <div style="padding:16px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px;">
+      <div style="width:32px;height:32px;background:#2d5a8e;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fa-solid fa-building" style="color:#fff;font-size:15px;"></i>
+      </div>
+      <span style="color:#fff;font-weight:700;font-size:12.5px;line-height:1.4;">SİTE YÖNETİM<br><span style="font-size:10px;color:#7fa8cc;font-weight:400;letter-spacing:.3px;">PANELİ</span></span>
+    </div>
+    <!-- Nav -->
+    <nav style="padding:10px 0;flex:1;">
+      <div class="sidebar-item active" id="nav-admin-home" onclick="adminNav('home')">
+        <i class="fa-solid fa-house" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Ana Sayfa</span>
+      </div>
+      <div class="sidebar-item" id="nav-admin-aidat" onclick="adminNav('aidat')">
+        <i class="fa-solid fa-turkish-lira-sign" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Aidat Takibi</span>
+      </div>
+      <div class="sidebar-item" id="nav-admin-ariza" onclick="adminNav('ariza')">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Arıza Bildirimleri</span>
+      </div>
+      <div class="sidebar-item" id="nav-admin-duyuru" onclick="adminNav('duyuru')">
+        <i class="fa-solid fa-comment-dots" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Duyurular & Oylama</span>
+      </div>
+      <div class="sidebar-item" id="nav-admin-mesajlar" onclick="adminNav('mesajlar')">
+        <i class="fa-solid fa-message" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Mesajlar</span>
+      </div>
+      <div class="sidebar-item" id="nav-admin-iban" onclick="adminNav('iban')">
+        <i class="fa-solid fa-building-columns" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">IBAN Yönetimi</span>
+      </div>
+      <div class="sidebar-item" id="nav-admin-gelir" onclick="adminNav('gelir')">
+        <i class="fa-solid fa-chart-line" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Gelir / Gider</span>
+      </div>
+      <div class="sidebar-item" id="nav-admin-sakinler" onclick="adminNav('sakinler')">
+        <i class="fa-solid fa-user-group" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Sakinler Listesi</span>
+      </div>
+      <div class="sidebar-item" id="nav-admin-ayarlar" onclick="adminNav('ayarlar')">
+        <i class="fa-solid fa-gear" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Ayarlar</span>
+      </div>
+    </nav>
+    <!-- Logout -->
+    <div style="padding:10px 8px;border-top:1px solid rgba(255,255,255,.07);">
+      <div class="sidebar-item" onclick="logout()" style="color:#f87171;">
+        <i class="fa-solid fa-right-from-bracket" style="font-size:14px;width:16px;"></i><span style="font-size:13px;">Çıkış Yap</span>
+      </div>
+    </div>
+  </div>
+  <div class="mob-overlay" id="mob-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <div class="main-content" style="background:#f0f4f8;">
+    <!-- Topbar -->
+    <div class="topbar" style="background:#fff;padding:10px 22px;border-bottom:1px solid #e8edf2;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;">
+      <button onclick="toggleSidebar()" style="background:none;border:none;cursor:pointer;padding:4px;display:none;" id="mob-menu-btn">
+        <i class="fa-solid fa-bars" style="font-size:18px;color:#1e3a5f;"></i>
+      </button>
+      <!-- Search -->
+      <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e8edf2;border-radius:10px;padding:7px 14px;max-width:280px;flex:1;">
+        <i class="fa-solid fa-magnifying-glass" style="color:#b0bec5;font-size:12px;"></i>
+        <input placeholder="Search..." style="border:none;background:transparent;outline:none;font-size:13px;color:#64748b;width:100%;">
+      </div>
+      <!-- Right icons -->
+      <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
+        <button style="background:none;border:none;cursor:pointer;" onclick="openModal('modal-profil-menu')">
+          <i class="fa-regular fa-circle-user" style="font-size:20px;color:#94a3b8;"></i>
+        </button>
+        <button style="background:none;border:none;cursor:pointer;position:relative;" onclick="openModal('modal-bildirimler')">
+          <i class="fa-solid fa-bell" style="font-size:18px;color:#94a3b8;"></i>
+          <span id="notif-badge" style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;">3</span>
+        </button>
+        <!-- Avatar with photo placeholder -->
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4a7ab5,#1e3a5f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;cursor:pointer;border:2px solid #e2e8f0;" id="admin-avatar" onclick="openModal('modal-profil-menu')">Y</div>
+      </div>
+    </div>
+
+    <!-- Admin Pages -->
+    <div id="admin-page-home" class="admin-page" style="padding:20px 22px;">
+
+      <!-- ÜST 3 KART -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px;">
+
+        <!-- Aylık Aidat Durumu -->
+        <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-size:12.5px;color:#64748b;font-weight:500;">Aylık Aidat Durumu</span>
+            <i class="fa-regular fa-clock" style="color:#b0bec5;font-size:13px;"></i>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:26px;font-weight:800;color:#1e293b;letter-spacing:-0.5px;" id="home-aidat-total">₺0</div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:5px;">Ödenen: <span id="home-aidat-pct" style="font-weight:600;color:#64748b;">%0</span></div>
+              <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;" id="home-aidat-sub">Birim aidat: <span id="home-aidat-birim" style="font-weight:600;color:#1e293b;">—</span></div>
+            </div>
+            <div style="width:58px;height:58px;position:relative;flex-shrink:0;">
+              <svg width="58" height="58" style="transform:rotate(-90deg);">
+                <circle cx="29" cy="29" r="23" fill="none" stroke="#e8f0fe" stroke-width="5"/>
+                <circle id="home-aidat-ring" cx="29" cy="29" r="23" fill="none" stroke="#4a90d9" stroke-width="5"
+                  stroke-dasharray="144.5" stroke-dashoffset="144.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Açık Arızalar -->
+        <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-size:12.5px;color:#64748b;font-weight:500;">Açık Arızalar</span>
+            <i class="fa-solid fa-circle-info" style="color:#b0bec5;font-size:13px;"></i>
+          </div>
+          <div style="display:flex;gap:24px;align-items:flex-end;">
+            <div>
+              <div style="font-size:40px;font-weight:800;color:#1e293b;line-height:1;" id="home-ariza-aktif">5</div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Aktif</div>
+            </div>
+            <div>
+              <div style="font-size:40px;font-weight:800;color:#ef4444;line-height:1;" id="home-ariza-acil">1</div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:6px;">Acil</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Son Duyuru -->
+        <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:12.5px;color:#64748b;font-weight:500;">Son Duyuru</span>
+            <i class="fa-solid fa-bullhorn" style="color:#b0bec5;font-size:13px;"></i>
+          </div>
+          <div style="font-weight:700;color:#1e293b;font-size:14px;margin-bottom:4px;" id="home-son-duyuru-title">Su Kesintisi Hakkında</div>
+          <div style="font-size:11.5px;color:#94a3b8;margin-bottom:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="home-son-duyuru-desc">Su Kesintisi Hakkında'n bısıvujruktsi...</div>
+          <button onclick="adminNav('duyuru')" style="background:#1a2e4a;color:#fff;border:none;padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Detay</button>
+        </div>
+      </div>
+
+      <!-- AİDAT LİSTESİ -->
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px 0;">
+          <span style="font-weight:700;font-size:14.5px;color:#1e293b;">Güncel Aidat Ödeme Listesi</span>
+          <select id="home-blok-filter" onchange="filterAidatHome(this.value)"
+            style="border:1px solid #e2e8f0;border-radius:8px;padding:5px 24px 5px 10px;font-size:12.5px;color:#374151;outline:none;background:#fff;cursor:pointer;">
+            <option value="">Blok Filtrele</option>
+            <option value="A Blok">A Blok</option>
+            <option value="B Blok">B Blok</option>
+            <option value="C Blok">C Blok</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto;margin-top:10px;">
+          <!-- Tablo başlığı -->
+          <div style="display:grid;grid-template-columns:34px 75px 1fr 75px 115px 70px 165px;padding:7px 18px;font-size:11.5px;font-weight:600;color:#94a3b8;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;">
+            <div></div><div>Daire</div><div>Sakin Adı</div><div>Blok</div><div>Durum</div><div>Tutar</div><div>Aksiyon</div>
+          </div>
+          <div id="admin-aidat-list"></div>
+        </div>
+      </div>
+
+      <!-- ALT 2 KOLON -->
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:14px;">
+
+        <!-- Son Arıza Bildirimleri -->
+        <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="padding:14px 18px 8px;font-weight:700;font-size:14.5px;color:#1e293b;">Son Arıza Bildirimleri</div>
+          <div id="admin-ariza-list-home"></div>
+        </div>
+
+        <!-- Güncel Oylama -->
+        <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:10px;">
+          <div style="font-weight:700;font-size:14.5px;color:#1e293b;">Güncel Oylama</div>
+          <div style="font-size:12.5px;color:#374151;" id="poll-question-home">Siteye Çocuk Parkı Yapılsın mı?</div>
+          <!-- EVET -->
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;">
+              <span>EVET</span><span id="poll-evet-pct">75%</span>
+            </div>
+            <div style="background:#e8edf2;border-radius:4px;height:8px;">
+              <div id="poll-bar-evet" style="background:#1a2e4a;height:8px;border-radius:4px;width:75%;transition:width .5s;"></div>
+            </div>
+          </div>
+          <!-- HAYIR -->
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;">
+              <span>HAYIR</span><span id="poll-hayir-pct">25%</span>
+            </div>
+            <div style="background:#e8edf2;border-radius:4px;height:8px;">
+              <div id="poll-bar-hayir" style="background:#ef4444;height:8px;border-radius:4px;width:25%;transition:width .5s;"></div>
+            </div>
+          </div>
+          <button onclick="adminNav('duyuru')" style="background:#1a2e4a;color:#fff;border:none;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:2px;">Oyla</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aidat Takibi Page -->
+    <div id="admin-page-aidat" class="admin-page" style="display:none;padding:22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="font-size:17px;font-weight:700;color:#1e293b;">Aidat Takibi</h2>
+        <button class="btn-primary" onclick="openModal('modal-add-payment')"><i class="fa-solid fa-plus"></i> Ödeme Ekle</button>
+      </div>
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow-x:auto;">
+        <div style="display:grid;grid-template-columns:34px 75px 1fr 75px 115px 70px 165px;padding:9px 18px;font-size:11.5px;font-weight:600;color:#94a3b8;border-bottom:1px solid #f1f5f9;">
+          <div></div><div>Daire</div><div>Sakin Adı</div><div>Blok</div><div>Durum</div><div>Tutar</div><div>Aksiyon</div>
+        </div>
+        <div id="admin-aidat-full-list"></div>
+      </div>
+    </div>
+
+    <!-- Arıza Bildirimleri Page -->
+    <div id="admin-page-ariza" class="admin-page" style="display:none;padding:22px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Arıza Bildirimleri</h2>
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);"><div id="admin-ariza-full-list"></div></div>
+    </div>
+
+    <!-- Duyurular & Oylama Page -->
+    <div id="admin-page-duyuru" class="admin-page" style="display:none;padding:22px;">
+      <div style="display:flex;gap:4px;margin-bottom:18px;background:#e8edf2;border-radius:10px;padding:4px;width:fit-content;">
+        <button class="tab-btn active" id="tab-duyuru" onclick="switchTab('duyuru')" style="font-size:13px;">📢 Duyurular</button>
+        <button class="tab-btn" id="tab-oylama" onclick="switchTab('oylama')" style="font-size:13px;">🗳️ Oylama</button>
+      </div>
+      <div id="tab-content-duyuru">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="font-weight:700;color:#1e293b;font-size:16px;">Duyurular</h3>
+          <button class="btn-primary" onclick="openModal('modal-add-duyuru')"><i class="fa-solid fa-plus"></i> Yeni Duyuru</button>
+        </div>
+        <div id="duyuru-list" style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);"></div>
+      </div>
+      <div id="tab-content-oylama" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h3 style="font-weight:700;color:#1e293b;font-size:16px;">Oylamalar</h3>
+          <button class="btn-primary" onclick="openModal('modal-add-oylama')"><i class="fa-solid fa-plus"></i> Yeni Oylama</button>
+        </div>
+        <div id="oylama-list" style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);"></div>
+      </div>
+    </div>
+
+    <!-- Sakinler Listesi Page -->
+    <div id="admin-page-sakinler" class="admin-page" style="display:none;padding:22px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Sakinler Listesi</h2>
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);"><div id="sakinler-list"></div></div>
+    </div>
+
+    <!-- Mesajlar Page (Admin) -->
+    <div id="admin-page-mesajlar" class="admin-page" style="display:none;padding:22px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Mesajlar</h2>
+      <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;height:calc(100vh - 120px);">
+        <!-- Konuşma listesi -->
+        <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow-y:auto;">
+          <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:13px;color:#64748b;">Sakinler</div>
+          <div id="admin-msg-list"></div>
+        </div>
+        <!-- Mesaj alanı -->
+        <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;flex-direction:column;">
+          <div id="admin-msg-header" style="padding:14px 18px;border-bottom:1px solid #f1f5f9;font-weight:700;font-size:14px;color:#1e293b;">Bir sakin seçin</div>
+          <div id="admin-msg-body" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;"></div>
+          <div style="padding:12px 16px;border-top:1px solid #f1f5f9;display:flex;gap:8px;">
+            <input id="admin-msg-input" class="form-input" placeholder="Mesaj yazın..." style="flex:1;" onkeydown="if(event.key==='Enter')adminSendMsg()">
+            <button onclick="adminSendMsg()" style="background:#1a2e4a;color:#fff;border:none;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- IBAN Yönetimi Page -->
+    <div id="admin-page-iban" class="admin-page" style="display:none;padding:22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h2 style="font-size:17px;font-weight:700;color:#1e293b;">IBAN Yönetimi</h2>
+        <button onclick="openModal('modal-add-iban')" style="background:#1a2e4a;color:#fff;border:none;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-plus"></i> IBAN Ekle</button>
+      </div>
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:24px;"><div id="admin-iban-list"></div></div>
+
+      <!-- Gelen Dekontlar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="font-weight:700;font-size:15px;color:#1e293b;display:flex;align-items:center;gap:8px;">
+          <i class="fa-solid fa-file-invoice" style="color:#1a2e4a;"></i> Gelen Dekontlar
+          <span id="admin-dekont-badge" style="background:#ef4444;color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;display:none;align-items:center;justify-content:center;font-weight:700;"></span>
+        </h3>
+      </div>
+      <div id="admin-dekont-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+
+    <!-- Gelir/Gider Page -->
+    <div id="admin-page-gelir" class="admin-page" style="display:none;padding:22px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Gelir / Gider Raporu</h2>
+      <!-- Özet kartlar -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;">
+        <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="font-size:12px;color:#64748b;margin-bottom:6px;">Toplam Gelir</div>
+          <div style="font-size:24px;font-weight:800;color:#16a34a;" id="gelir-toplam">₺0</div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="font-size:12px;color:#64748b;margin-bottom:6px;">Toplam Gider</div>
+          <div style="font-size:24px;font-weight:800;color:#ef4444;" id="gider-toplam">₺0</div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="font-size:12px;color:#64748b;margin-bottom:6px;">Net Bakiye</div>
+          <div style="font-size:24px;font-weight:800;color:#1a2e4a;" id="net-bakiye">₺0</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <button onclick="openModal('modal-add-gelir')" style="background:#1a2e4a;color:#fff;border:none;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-plus"></i> Kayıt Ekle</button>
+      </div>
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);"><div id="gelir-gider-list"></div></div>
+    </div>
+
+    <!-- Ayarlar Page -->
+    <div id="admin-page-ayarlar" class="admin-page" style="display:none;padding:22px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Ayarlar</h2>
+      <div style="background:#fff;border-radius:12px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.06);max-width:460px;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div><label class="form-label">Site Adı</label><input id="ayar-site-adi" class="form-input" placeholder="Örn: Güneş Sitesi"></div>
+          <div>
+            <label class="form-label">Aylık Aidat Tutarı (₺)</label>
+            <input id="ayar-aidat" class="form-input" type="number" min="0" placeholder="Örn: 500">
+            <div style="font-size:12px;color:#94a3b8;margin-top:5px;">Bu tutar tüm sakinlere uygulanır ve ödeme listesinde görünür.</div>
+          </div>
+          <div><label class="form-label">Yönetici Adı</label><input id="ayar-yonetici" class="form-input" placeholder="Ad Soyad"></div>
+          <div><label class="form-label">İletişim E-posta</label><input id="ayar-email" class="form-input" type="email" placeholder="yonetici@site.com"></div>
+          <button onclick="ayarlariKaydet()" style="background:#1a2e4a;color:#fff;border:none;padding:11px 22px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;width:fit-content;">Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCREEN 5: SAKİN PANELİ ===== -->
+<div id="screen-resident" class="screen" style="flex-direction:row;overflow-x:hidden;">
+  <div class="sidebar" id="resident-sidebar">
+    <div style="padding:20px 16px 16px;border-bottom:1px solid #2d5a8e;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <i class="fa-solid fa-building-columns" style="color:#60a5fa;font-size:22px;"></i>
+        <span style="color:#fff;font-weight:700;font-size:15px;">SİTE YÖNETİM<br><span style="font-size:11px;color:#a8c4e0;font-weight:400;">PANELİ</span></span>
+      </div>
+    </div>
+    <nav style="padding:12px 0;">
+      <div class="sidebar-item active" id="nav-res-home" onclick="resNav('home')"><i class="fa-solid fa-house"></i> Ana Sayfa</div>
+      <div class="sidebar-item" id="nav-res-mesajlar" onclick="resNav('mesajlar')"><i class="fa-solid fa-message"></i> Mesajlar</div>
+      <div class="sidebar-item" id="nav-res-borclar" onclick="resNav('borclar')"><i class="fa-solid fa-file-invoice-dollar"></i> Borçlarım</div>
+      <div class="sidebar-item" id="nav-res-odemeler" onclick="resNav('odemeler')"><i class="fa-solid fa-receipt"></i> Ödemelerim</div>
+      <div class="sidebar-item" id="nav-res-icra" onclick="resNav('icra')"><i class="fa-solid fa-lock"></i> İcra Dosyaları</div>
+      <div class="sidebar-item" id="nav-res-havale" onclick="resNav('havale')"><i class="fa-solid fa-building-columns"></i> Banka Havalelerim</div>
+      <div class="sidebar-item" id="nav-res-duyuru" onclick="resNav('duyuru')"><i class="fa-solid fa-bullhorn"></i> Duyurular</div>
+      <div class="sidebar-item" id="nav-res-ariza" onclick="resNav('ariza')"><i class="fa-solid fa-triangle-exclamation"></i> Arıza Bildirimi</div>
+      <div class="sidebar-item" id="nav-res-durum" onclick="resNav('durum')"><i class="fa-solid fa-chart-bar"></i> Güncel Durum</div>
+      <div class="sidebar-item" id="nav-res-bilgi" onclick="resNav('bilgi')"><i class="fa-solid fa-circle-info"></i> Bilgi Kartı</div>
+      <div class="sidebar-item" id="nav-res-profil" onclick="resNav('profil')"><i class="fa-solid fa-user"></i> Profil</div>
+    </nav>
+    <div style="margin-top:auto;padding:16px;border-top:1px solid #2d5a8e;">
+      <div class="sidebar-item" onclick="logout()" style="color:#f87171;"><i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap</div>
+    </div>
+  </div>
+  <div class="mob-overlay" id="mob-overlay-res" onclick="closeSidebarRes()"></div>
+
+  <div class="main-content">
+    <div class="topbar" style="background:#fff;padding:10px 22px;border-bottom:1px solid #e8edf2;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;">
+      <button onclick="toggleSidebarRes()" style="background:none;border:none;cursor:pointer;padding:4px;display:none;" id="mob-menu-btn-res">
+        <i class="fa-solid fa-bars" style="font-size:18px;color:#1e3a5f;"></i>
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e8edf2;border-radius:10px;padding:7px 14px;max-width:280px;flex:1;">
+        <i class="fa-solid fa-magnifying-glass" style="color:#b0bec5;font-size:12px;"></i>
+        <input placeholder="Search..." style="border:none;background:transparent;outline:none;font-size:13px;color:#64748b;width:100%;">
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
+        <button style="background:none;border:none;cursor:pointer;" onclick="openModal('modal-res-profil-menu')">
+          <i class="fa-regular fa-circle-user" style="font-size:20px;color:#94a3b8;"></i>
+        </button>
+        <button style="background:none;border:none;cursor:pointer;position:relative;" onclick="openModal('modal-res-bildirimler')">
+          <i class="fa-solid fa-bell" style="font-size:18px;color:#94a3b8;"></i>
+          <span id="res-notif-badge" style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;display:none;"></span>
+        </button>
+        <span style="font-size:13px;font-weight:600;color:#374151;" id="res-topbar-name">Ahmet Nazlı</span>
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#4a7ab5,#1e3a5f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;cursor:pointer;border:2px solid #e2e8f0;" id="res-avatar" onclick="openModal('modal-res-profil-menu')">A</div>
+      </div>
+    </div>
+
+    <!-- Resident Pages -->
+    <div id="res-page-home" class="res-page" style="padding:24px;">
+      <!-- Stats -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:13px;color:#64748b;font-weight:600;">Dairem</span>
+            <i class="fa-regular fa-clock" style="color:#94a3b8;"></i>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div>
+              <div style="font-size:26px;font-weight:800;color:#1e293b;" id="res-daire-no">A1-D4</div>
+              <div style="font-size:13px;color:#64748b;" id="res-daire-info">Ahmet Nazlı - A Blok</div>
+            </div>
+            <i class="fa-solid fa-building" style="font-size:36px;color:#bfdbfe;margin-left:auto;"></i>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:13px;color:#64748b;font-weight:600;">Güncel Aidat</span>
+            <i class="fa-solid fa-circle-info" style="color:#94a3b8;"></i>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div>
+              <div style="font-size:26px;font-weight:800;color:#1e293b;" id="res-aidat-tutar">—</div>
+              <div style="margin-top:4px;" id="res-aidat-durum"><span class="status-paid"><i class="fa-solid fa-circle-check"></i> Ödendi</span></div>
+              <div id="res-aidat-btn-wrap" style="margin-top:8px;display:none;">
+                <button onclick="openModal_odeme_yap_from_home()" style="background:#1a2e4a;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-credit-card"></i> Ödeme Yap</button>
+              </div>
+            </div>
+            <div id="res-aidat-icon" style="margin-left:auto;">
+              <i class="fa-solid fa-circle-check" style="font-size:36px;color:#86efac;"></i>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:13px;color:#64748b;font-weight:600;margin-bottom:10px;">Son Arıza Durumu</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:#374151;">
+              <i class="fa-solid fa-lightbulb" style="color:#94a3b8;"></i> C Blok Lamba Değişimi
+            </div>
+            <span class="status-waiting">Bekliyor</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Geçmiş Ödemeler -->
+      <div class="card" style="margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="font-weight:700;font-size:16px;color:#1e293b;">Geçmiş Ödemelerim</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <i class="fa-solid fa-magnifying-glass" style="color:#94a3b8;"></i>
+            <select class="form-input" style="width:auto;padding:6px 12px;font-size:13px;"><option>Ödemeleri Ara</option></select>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <div class="table-row resident-table-row" style="font-weight:700;font-size:12px;color:#94a3b8;border-bottom:2px solid #e2e8f0;">
+            <div>Tarih</div><div>Tutar</div><div>Durum</div><div>Açıklama</div><div>Dekont</div>
+          </div>
+          <div id="res-payment-list"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div style="display:grid;grid-template-columns:1fr 260px 280px;gap:16px;">
+        <!-- Duyurular -->
+        <div class="card">
+          <div style="font-weight:700;font-size:15px;color:#1e293b;margin-bottom:12px;">Güncel Duyurular</div>
+          <div id="res-duyuru-list-home"></div>
+        </div>
+        <!-- Güncel Oylama -->
+        <div class="card" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="font-weight:700;font-size:15px;color:#1e293b;">Güncel Oylama</div>
+          <div id="res-home-oylama"><div style="font-size:13px;color:#94a3b8;">Aktif oylama yok.</div></div>
+        </div>
+        <!-- Arıza Bildirimi -->
+        <div class="card">
+          <div style="font-weight:700;font-size:15px;color:#1e293b;margin-bottom:12px;">Yeni Arıza Bildirimi</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div>
+              <label class="form-label">Arıza Türü</label>
+              <select id="res-ariza-tur" class="form-input" style="padding:8px 10px;font-size:13px;">
+                <option>Elektrik</option><option>Su</option><option>Asansör</option><option>Isıtma</option><option>Diğer</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Konu</label>
+              <input id="res-ariza-konu" class="form-input" style="padding:8px 10px;font-size:13px;" placeholder="Konu">
+            </div>
+          </div>
+          <textarea id="res-ariza-aciklama" class="form-input" rows="3" placeholder="Açıklama" style="resize:none;margin-bottom:8px;"></textarea>
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn-primary" onclick="submitResAriza()">Bildirimi Gönder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resident Duyurular Page -->
+    <div id="res-page-duyuru" class="res-page" style="display:none;padding:24px;">
+      <!-- Tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:20px;background:#e8edf2;border-radius:10px;padding:4px;width:fit-content;">
+        <button class="tab-btn active" id="res-tab-duyuru" onclick="resTabSwitch('duyuru')" style="font-size:13px;">📢 Duyurular</button>
+        <button class="tab-btn" id="res-tab-oylama" onclick="resTabSwitch('oylama')" style="font-size:13px;">🗳️ Oylamalar</button>
+      </div>
+
+      <!-- Duyurular -->
+      <div id="res-tab-content-duyuru">
+        <h3 style="font-weight:700;color:#1e293b;font-size:16px;margin-bottom:14px;">Duyurular</h3>
+        <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);"><div id="res-duyuru-full-list"></div></div>
+      </div>
+
+      <!-- Oylamalar -->
+      <div id="res-tab-content-oylama" style="display:none;">
+        <h3 style="font-weight:700;color:#1e293b;font-size:16px;margin-bottom:14px;">Aktif Oylamalar</h3>
+        <div id="res-oylama-list" style="display:flex;flex-direction:column;gap:14px;"></div>
+      </div>
+    </div>
+
+    <!-- Resident Arıza Page -->
+    <div id="res-page-ariza" class="res-page" style="display:none;padding:24px;">
+      <h2 style="font-size:20px;font-weight:700;color:#1e293b;margin-bottom:20px;">Arıza Bildirimi</h2>
+      <div class="card" style="max-width:520px;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div><label class="form-label">Arıza Türü</label>
+            <select id="res-ariza-tur2" class="form-input">
+              <option>Elektrik</option><option>Su</option><option>Asansör</option><option>Isıtma</option><option>Diğer</option>
+            </select>
+          </div>
+          <div><label class="form-label">Konu</label><input id="res-ariza-konu2" class="form-input" placeholder="Arıza konusu"></div>
+          <div><label class="form-label">Açıklama</label><textarea id="res-ariza-aciklama2" class="form-input" rows="4" placeholder="Detaylı açıklama" style="resize:none;"></textarea></div>
+          <button class="btn-primary" style="width:fit-content;" onclick="submitResAriza2()">Bildirimi Gönder</button>
+        </div>
+      </div>
+      <div style="margin-top:24px;">
+        <h3 style="font-weight:700;color:#1e293b;margin-bottom:12px;">Geçmiş Bildirimlerim</h3>
+        <div class="card"><div id="res-ariza-history"></div></div>
+      </div>
+    </div>
+
+    <!-- Resident Ödemeler Page -->
+    <div id="res-page-odemeler" class="res-page" style="display:none;padding:24px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 style="font-size:20px;font-weight:700;color:#1e293b;">Ödemelerim</h2>
+        <button onclick="openModal('modal-odeme-yap')" style="background:#1a2e4a;color:#fff;border:none;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;" id="odemeler-btn">
+          <i class="fa-solid fa-credit-card"></i> Ödeme Yap
+        </button>
+      </div>
+      <div class="card">
+        <div style="overflow-x:auto;">
+          <div class="table-row resident-table-row" style="font-weight:700;font-size:12px;color:#94a3b8;border-bottom:2px solid #e2e8f0;">
+            <div>Tarih</div><div>Tutar</div><div>Durum</div><div>Açıklama</div><div>Dekont</div>
+          </div>
+          <div id="res-payment-full-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mesajlar Page (Sakin) -->
+    <div id="res-page-mesajlar" class="res-page" style="display:none;padding:24px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Mesajlar</h2>
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;flex-direction:column;height:calc(100vh-160px);min-height:400px;">
+        <div id="res-msg-header" style="padding:14px 18px;border-bottom:1px solid #f1f5f9;font-weight:700;font-size:14px;color:#1e293b;display:flex;align-items:center;gap:8px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:#1a2e4a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;">Y</div>
+          Yönetici ile Mesajlaşma
+        </div>
+        <div id="res-msg-body" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:300px;"></div>
+        <div style="padding:12px 16px;border-top:1px solid #f1f5f9;display:flex;gap:8px;">
+          <input id="res-msg-input" class="form-input" placeholder="Mesaj yazın..." style="flex:1;" onkeydown="if(event.key==='Enter')resSendMsg()">
+          <button onclick="resSendMsg()" style="background:#1a2e4a;color:#fff;border:none;padding:10px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Borçlarım Page -->
+    <div id="res-page-borclar" class="res-page" style="display:none;padding:24px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Borçlarım</h2>
+      <div id="res-borclar-ozet" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;"></div>
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);"><div id="res-borclar-list"></div></div>
+    </div>
+
+    <!-- Banka Havalelerim Page -->
+    <div id="res-page-havale" class="res-page" style="display:none;padding:24px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:6px;">Banka Havalelerim</h2>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;">Aidat ödemelerinizi aşağıdaki banka hesaplarına havale/EFT yoluyla yapabilirsiniz. Ödeme sonrası dekontu yükleyin.</p>
+
+      <!-- IBAN listesi -->
+      <div id="res-iban-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;"></div>
+
+      <!-- Dekont Gönder -->
+      <div style="background:#fff;border-radius:14px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="font-weight:700;font-size:15px;color:#1e293b;margin-bottom:4px;display:flex;align-items:center;gap:8px;">
+          <i class="fa-solid fa-file-arrow-up" style="color:#1a2e4a;"></i> Dekont Gönder
+        </div>
+        <p style="font-size:12.5px;color:#64748b;margin-bottom:16px;">Havale/EFT yaptıktan sonra dekontu yöneticiye gönderin, ödemeniz onaylanacaktır.</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label class="form-label">Ödeme Yapılan Banka</label>
+            <select id="dekont-banka" class="form-input">
+              <option value="">Banka seçin...</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label class="form-label">Ödeme Tutarı (₺)</label>
+              <input id="dekont-tutar" class="form-input" type="number" placeholder="500">
+            </div>
+            <div>
+              <label class="form-label">Ödeme Tarihi</label>
+              <input id="dekont-tarih" class="form-input" type="date">
+            </div>
+          </div>
+          <div>
+            <label class="form-label">Açıklama / Not</label>
+            <input id="dekont-not" class="form-input" placeholder="Örn: Ocak 2026 aidatı">
+          </div>
+          <!-- Dosya yükleme alanı -->
+          <div>
+            <label class="form-label">Dekont Dosyası (PDF / Görsel)</label>
+            <label for="dekont-dosya" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;border:2px dashed #c7d9f0;border-radius:10px;cursor:pointer;background:#f8fafc;transition:border .2s;" id="dekont-drop-area">
+              <i class="fa-solid fa-cloud-arrow-up" style="font-size:28px;color:#4a7ab5;"></i>
+              <span style="font-size:13px;color:#64748b;">Dosya seçmek için tıklayın veya sürükleyin</span>
+              <span style="font-size:11.5px;color:#94a3b8;">PDF, JPG, PNG — Maks. 5MB</span>
+              <input id="dekont-dosya" type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="previewDekont(this)">
+            </label>
+            <div id="dekont-preview" style="display:none;margin-top:10px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;align-items:center;gap:10px;">
+              <i class="fa-solid fa-file-check" style="color:#16a34a;font-size:18px;"></i>
+              <span id="dekont-filename" style="font-size:13px;color:#15803d;font-weight:600;flex:1;"></span>
+              <button onclick="clearDekont()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:14px;">✕</button>
+            </div>
+          </div>
+          <button onclick="gonderdekont()" style="background:#1a2e4a;color:#fff;border:none;padding:12px;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+            <i class="fa-solid fa-paper-plane"></i> Dekontu Yöneticiye Gönder
+          </button>
+        </div>
+      </div>
+
+      <!-- Gönderilen Dekontlar -->
+      <div style="margin-top:24px;">
+        <h3 style="font-weight:700;font-size:15px;color:#1e293b;margin-bottom:12px;">Gönderilen Dekontlarım</h3>
+        <div id="res-dekont-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+    </div>
+
+    <!-- İcra Dosyaları Page -->
+    <div id="res-page-icra" class="res-page" style="display:none;padding:24px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:6px;">İcra Dosyaları</h2>
+      <p style="font-size:13px;color:#64748b;margin-bottom:20px;">Dairenize ait icra ve yasal takip dosyaları aşağıda listelenmektedir.</p>
+      <div id="res-icra-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
+
+    <!-- Güncel Durum Page -->
+    <div id="res-page-durum" class="res-page" style="display:none;padding:24px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Güncel Durum</h2>
+      <div id="res-durum-content" style="display:flex;flex-direction:column;gap:14px;"></div>
+    </div>
+
+    <!-- Bilgi Kartı Page -->
+    <div id="res-page-bilgi" class="res-page" style="display:none;padding:24px;">
+      <h2 style="font-size:17px;font-weight:700;color:#1e293b;margin-bottom:16px;">Bilgi Kartı</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-building" style="color:#1a2e4a;"></i> DAİRE BİLGİLERİ</div>
+          <div style="display:flex;flex-direction:column;gap:10px;" id="bilgi-daire"></div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+          <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-circle-info" style="color:#1a2e4a;"></i> SİTE BİLGİLERİ</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #f8fafc;padding-bottom:8px;"><span style="color:#64748b;">Site Adı</span><span style="font-weight:600;color:#1e293b;">Güneş Sitesi</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #f8fafc;padding-bottom:8px;"><span style="color:#64748b;">Aylık Aidat</span><span style="font-weight:600;color:#1e293b;">₺500</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #f8fafc;padding-bottom:8px;"><span style="color:#64748b;">Yönetici</span><span style="font-weight:600;color:#1e293b;">Yönetici</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:#64748b;">İletişim</span><span style="font-weight:600;color:#1e293b;">yonetici@site.com</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resident Profil Page -->
+    <div id="res-page-profil" class="res-page" style="display:none;padding:24px;">
+      <h2 style="font-size:20px;font-weight:700;color:#1e293b;margin-bottom:20px;">Profilim</h2>
+      <div class="card" style="max-width:480px;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div><label class="form-label">Ad Soyad</label><input class="form-input" id="profil-name"></div>
+          <div><label class="form-label">E-posta</label><input class="form-input" id="profil-email"></div>
+          <div><label class="form-label">Telefon</label><input class="form-input" id="profil-phone"></div>
+          <div><label class="form-label">T.C. Kimlik No</label><input class="form-input" value="***********" disabled style="background:#f8fafc;color:#94a3b8;"></div>
+          <div><label class="form-label">Daire</label><input class="form-input" id="profil-daire" disabled style="background:#f8fafc;color:#94a3b8;"></div>
+          <button onclick="profilGuncelle()" style="background:#1a2e4a;color:#fff;border:none;padding:10px 20px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;width:fit-content;">Güncelle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- Sakin Profil Menü -->
+<div id="modal-res-profil-menu" class="modal-overlay" style="align-items:flex-start;justify-content:flex-end;padding:60px 16px 0 0;">
+  <div style="background:#fff;border-radius:14px;width:240px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="background:linear-gradient(135deg,#1a2e4a,#2d5a8e);padding:18px;display:flex;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;" id="res-profil-menu-avatar">A</div>
+      <div>
+        <div style="color:#fff;font-weight:700;font-size:13px;" id="res-profil-menu-name">Sakin</div>
+        <div style="color:#a8c4e0;font-size:11px;" id="res-profil-menu-daire"></div>
+      </div>
+    </div>
+    <div style="padding:6px 0;">
+      <button onclick="resNav('profil');closeModal('modal-res-profil-menu')" style="width:100%;text-align:left;padding:10px 16px;background:none;border:none;cursor:pointer;font-size:13px;color:#374151;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+        <i class="fa-solid fa-user" style="color:#64748b;width:14px;"></i> Profilim
+      </button>
+      <button onclick="resNav('odemeler');closeModal('modal-res-profil-menu')" style="width:100%;text-align:left;padding:10px 16px;background:none;border:none;cursor:pointer;font-size:13px;color:#374151;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+        <i class="fa-solid fa-receipt" style="color:#64748b;width:14px;"></i> Ödemelerim
+      </button>
+      <div style="border-top:1px solid #f1f5f9;margin:4px 0;"></div>
+      <button onclick="logout();closeModal('modal-res-profil-menu')" style="width:100%;text-align:left;padding:10px 16px;background:none;border:none;cursor:pointer;font-size:13px;color:#ef4444;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
+        <i class="fa-solid fa-right-from-bracket" style="width:14px;"></i> Çıkış Yap
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Sakin Bildirimler -->
+<div id="modal-res-bildirimler" class="modal-overlay" style="align-items:flex-start;justify-content:flex-end;padding:60px 16px 0 0;">
+  <div style="background:#fff;border-radius:14px;width:300px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:700;font-size:14px;color:#1e293b;">Bildirimler</span>
+      <button onclick="closeModal('modal-res-bildirimler')" style="background:none;border:none;cursor:pointer;font-size:12px;color:#64748b;">Kapat</button>
+    </div>
+    <div id="res-bildirim-list" style="max-height:320px;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- Şifremi Unuttum Modal -->
+<div id="modal-sifre-unut" class="modal-overlay">
+  <div class="modal-box slide-up" style="max-width:380px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+      <div style="width:36px;height:36px;background:#eff6ff;border-radius:9px;display:flex;align-items:center;justify-content:center;">
+        <i class="fa-solid fa-key" style="color:#2563eb;font-size:15px;"></i>
+      </div>
+      <h3 style="font-weight:700;font-size:16px;color:#1e293b;">Şifremi Unuttum</h3>
+    </div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.6;">T.C. Kimlik Numaranızı girin. Kayıtlı e-posta adresinize şifre sıfırlama bağlantısı gönderilecektir.</p>
+    <div style="position:relative;margin-bottom:14px;">
+      <i class="fa-solid fa-id-card" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;"></i>
+      <input id="sifre-unut-tc" class="form-input" style="padding-left:36px;" placeholder="T.C. Kimlik Numarası" maxlength="11" type="text">
+    </div>
+    <div id="sifre-unut-msg" style="font-size:12.5px;margin-bottom:12px;display:none;padding:10px 12px;border-radius:8px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeModal('modal-sifre-unut')" style="flex:1;padding:10px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;">İptal</button>
+      <button onclick="doSifreUnut()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#1a2e4a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Sıfırlama Gönder</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-add-payment" class="modal-overlay">
+  <div class="modal-box slide-up">
+    <h3 style="font-weight:700;font-size:18px;color:#1e293b;margin-bottom:20px;">Ödeme Ekle</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Daire No</label><input id="pay-daire" class="form-input" placeholder="Örn: A1-D4"></div>
+      <div><label class="form-label">Tutar (₺)</label><input id="pay-tutar" class="form-input" type="number" placeholder="500"></div>
+      <div><label class="form-label">Açıklama</label><input id="pay-aciklama" class="form-input" placeholder="Açıklama"></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn-outline" style="flex:1;" onclick="closeModal('modal-add-payment')">İptal</button>
+        <button class="btn-primary" style="flex:1;" onclick="addPayment()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-add-duyuru" class="modal-overlay">
+  <div class="modal-box slide-up">
+    <h3 style="font-weight:700;font-size:18px;color:#1e293b;margin-bottom:20px;">Yeni Duyuru</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Başlık</label><input id="duyuru-baslik" class="form-input" placeholder="Duyuru başlığı"></div>
+      <div><label class="form-label">İçerik</label><textarea id="duyuru-icerik" class="form-input" rows="4" placeholder="Duyuru içeriği" style="resize:none;"></textarea></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn-outline" style="flex:1;" onclick="closeModal('modal-add-duyuru')">İptal</button>
+        <button class="btn-primary" style="flex:1;" onclick="addDuyuru()">Yayınla</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-add-oylama" class="modal-overlay">
+  <div class="modal-box slide-up">
+    <h3 style="font-weight:700;font-size:18px;color:#1e293b;margin-bottom:20px;">Yeni Oylama</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Soru</label><input id="oylama-soru" class="form-input" placeholder="Oylama sorusu"></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn-outline" style="flex:1;" onclick="closeModal('modal-add-oylama')">İptal</button>
+        <button class="btn-primary" style="flex:1;" onclick="addOylama()">Oluştur</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IBAN Ekle Modal -->
+<div id="modal-add-iban" class="modal-overlay">
+  <div class="modal-box slide-up">
+    <h3 style="font-weight:700;font-size:17px;color:#1e293b;margin-bottom:18px;"><i class="fa-solid fa-building-columns" style="color:#1a2e4a;"></i> IBAN Ekle</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label class="form-label">Banka Adı</label><input id="iban-banka" class="form-input" placeholder="Örn: Ziraat Bankası"></div>
+      <div><label class="form-label">Hesap Sahibi</label><input id="iban-sahip" class="form-input" placeholder="Örn: Güneş Sitesi Yönetimi"></div>
+      <div><label class="form-label">IBAN</label><input id="iban-no" class="form-input" placeholder="TR00 0000 0000 0000 0000 0000 00" maxlength="32" oninput="formatIBAN(this)"></div>
+      <div><label class="form-label">Açıklama (opsiyonel)</label><input id="iban-aciklama" class="form-input" placeholder="Örn: Aidat ödemeleri için"></div>
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button onclick="closeModal('modal-add-iban')" style="flex:1;padding:10px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;">İptal</button>
+        <button onclick="addIBAN()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#1a2e4a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gelir/Gider Kayıt Modal -->
+<div id="modal-add-gelir" class="modal-overlay">
+  <div class="modal-box slide-up">
+    <h3 style="font-weight:700;font-size:17px;color:#1e293b;margin-bottom:18px;"><i class="fa-solid fa-chart-line" style="color:#1a2e4a;"></i> Kayıt Ekle</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label class="form-label">Tür</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;">
+            <input type="radio" name="gelir-tur" value="gelir" checked style="accent-color:#16a34a;"> <span style="color:#16a34a;font-weight:600;">📈 Gelir</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;">
+            <input type="radio" name="gelir-tur" value="gider" style="accent-color:#ef4444;"> <span style="color:#ef4444;font-weight:600;">📉 Gider</span>
+          </label>
+        </div>
+      </div>
+      <div><label class="form-label">Açıklama</label><input id="gelir-aciklama" class="form-input" placeholder="Örn: Ocak aidatları, Asansör bakımı..."></div>
+      <div><label class="form-label">Tutar (₺)</label><input id="gelir-tutar" class="form-input" type="number" placeholder="0"></div>
+      <div><label class="form-label">Tarih</label><input id="gelir-tarih" class="form-input" type="date"></div>
+      <div style="display:flex;gap:10px;margin-top:6px;">
+        <button onclick="closeModal('modal-add-gelir')" style="flex:1;padding:10px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;">İptal</button>
+        <button onclick="addGelirGider()" style="flex:2;padding:10px;border-radius:9px;border:none;background:#1a2e4a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-detail" class="modal-overlay">
+  <div class="modal-box slide-up">
+    <h3 style="font-weight:700;font-size:17px;color:#1e293b;margin-bottom:16px;" id="modal-detail-title">Detay</h3>
+    <div id="modal-detail-content" style="font-size:14px;color:#374151;line-height:1.7;"></div>
+    <button onclick="closeModal('modal-detail')" style="margin-top:20px;width:100%;padding:12px;border-radius:9px;border:none;background:#1a2e4a;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Kapat</button>
+  </div>
+</div>
+
+<!-- Ödeme Yap Modal -->
+<div id="modal-odeme-yap" class="modal-overlay">
+  <div class="modal-box slide-up" style="max-width:420px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <div style="width:38px;height:38px;background:#eff6ff;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+        <i class="fa-solid fa-credit-card" style="color:#2563eb;font-size:16px;"></i>
+      </div>
+      <h3 style="font-weight:700;font-size:17px;color:#1e293b;">Aidat Ödemesi</h3>
+    </div>
+
+    <!-- Ödeme özeti -->
+    <div style="background:#f8fafc;border-radius:10px;padding:14px 16px;margin-bottom:18px;border:1px solid #e2e8f0;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+        <span style="color:#64748b;">Daire</span>
+        <span style="font-weight:600;color:#1e293b;" id="odeme-daire-label">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+        <span style="color:#64748b;">Dönem</span>
+        <span style="font-weight:600;color:#1e293b;" id="odeme-donem-label">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:15px;border-top:1px solid #e2e8f0;padding-top:10px;margin-top:4px;">
+        <span style="color:#64748b;font-weight:600;">Tutar</span>
+        <span style="font-weight:800;color:#1a2e4a;" id="odeme-tutar-label">500₺</span>
+      </div>
+    </div>
+
+    <!-- Ödeme yöntemi -->
+    <div style="margin-bottom:16px;">
+      <label class="form-label">Ödeme Yöntemi</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;" id="yontem-kart-label">
+          <input type="radio" name="odeme-yontem" value="kart" checked onchange="selectYontem('kart')" style="accent-color:#1a2e4a;">
+          <i class="fa-solid fa-credit-card" style="color:#2563eb;"></i> Kredi/Banka Kartı
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;cursor:pointer;font-size:13px;font-weight:500;" id="yontem-havale-label">
+          <input type="radio" name="odeme-yontem" value="havale" onchange="selectYontem('havale')" style="accent-color:#1a2e4a;">
+          <i class="fa-solid fa-building-columns" style="color:#7c3aed;"></i> Havale/EFT
+        </label>
+      </div>
+    </div>
+
+    <!-- Kart bilgileri -->
+    <div id="kart-alani" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div>
+        <label class="form-label">Kart Numarası</label>
+        <input class="form-input" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatKart(this)">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label class="form-label">Son Kullanma</label>
+          <input class="form-input" placeholder="AA/YY" maxlength="5">
+        </div>
+        <div>
+          <label class="form-label">CVV</label>
+          <input class="form-input" placeholder="***" maxlength="3" type="password">
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Kart Üzerindeki İsim</label>
+        <input class="form-input" placeholder="Ad Soyad">
+      </div>
+    </div>
+
+    <!-- Havale bilgileri -->
+    <div id="havale-alani" style="display:none;margin-bottom:16px;">
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:14px 16px;font-size:13px;color:#374151;line-height:1.8;">
+        <div><strong>Banka:</strong> Ziraat Bankası</div>
+        <div><strong>IBAN:</strong> TR00 0000 0000 0000 0000 0000 00</div>
+        <div><strong>Hesap Adı:</strong> Güneş Sitesi Yönetimi</div>
+        <div style="margin-top:8px;color:#7c3aed;font-size:12px;"><i class="fa-solid fa-circle-info"></i> Açıklama kısmına daire numaranızı yazınız.</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="closeModal('modal-odeme-yap')" style="flex:1;padding:11px;border-radius:9px;border:1.5px solid #e2e8f0;background:#fff;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;">İptal</button>
+      <button onclick="odemeYap()" style="flex:2;padding:11px;border-radius:9px;border:none;background:#1a2e4a;color:#fff;font-size:13px;font-weight:700;cursor:pointer;"><i class="fa-solid fa-lock" style="font-size:11px;"></i> Güvenli Öde</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e3a5f;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:200;display:none;box-shadow:0 4px 20px rgba(0,0,0,.2);">
+  Kaydedildi
+</div>
+
+<!-- İmza -->
+<div style="position:fixed;bottom:12px;right:16px;font-style:italic;font-size:12px;color:rgba(0,0,0,.18);pointer-events:none;z-index:9999;letter-spacing:.5px;user-select:none;">A.N.</div>
+
+<!-- Profil Menü Modal -->
+<div id="modal-profil-menu" class="modal-overlay" style="align-items:flex-start;justify-content:flex-end;padding:60px 16px 0 0;">
+  <div style="background:#fff;border-radius:14px;padding:0;width:260px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="background:linear-gradient(135deg,#1a2e4a,#2d5a8e);padding:20px;display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;" id="profil-menu-avatar">Y</div>
+      <div>
+        <div style="color:#fff;font-weight:700;font-size:14px;" id="profil-menu-name">Yönetici</div>
+        <div style="color:#a8c4e0;font-size:12px;">Yönetici</div>
+      </div>
+    </div>
+    <div style="padding:8px 0;">
+      <button onclick="adminNav('ayarlar');closeModal('modal-profil-menu')" style="width:100%;text-align:left;padding:11px 18px;background:none;border:none;cursor:pointer;font-size:13px;color:#374151;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+        <i class="fa-solid fa-gear" style="color:#64748b;width:16px;"></i> Ayarlar
+      </button>
+      <button onclick="adminNav('sakinler');closeModal('modal-profil-menu')" style="width:100%;text-align:left;padding:11px 18px;background:none;border:none;cursor:pointer;font-size:13px;color:#374151;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+        <i class="fa-solid fa-user-group" style="color:#64748b;width:16px;"></i> Sakinler
+      </button>
+      <div style="border-top:1px solid #f1f5f9;margin:4px 0;"></div>
+      <button onclick="logout();closeModal('modal-profil-menu')" style="width:100%;text-align:left;padding:11px 18px;background:none;border:none;cursor:pointer;font-size:13px;color:#ef4444;display:flex;align-items:center;gap:10px;" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
+        <i class="fa-solid fa-right-from-bracket" style="width:16px;"></i> Çıkış Yap
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Bildirimler Modal -->
+<div id="modal-bildirimler" class="modal-overlay" style="align-items:flex-start;justify-content:flex-end;padding:60px 16px 0 0;">
+  <div style="background:#fff;border-radius:14px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.15);overflow:hidden;" onclick="event.stopPropagation()">
+    <div style="padding:16px 18px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:700;font-size:15px;color:#1e293b;">Bildirimler</span>
+      <button onclick="tumunuOku()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#2563eb;font-weight:600;">Tümünü Okundu İşaretle</button>
+    </div>
+    <div id="bildirim-list" style="max-height:360px;overflow-y:auto;"></div>
+    <div style="padding:12px 18px;border-top:1px solid #f1f5f9;text-align:center;">
+      <button onclick="closeModal('modal-bildirimler')" style="background:none;border:none;cursor:pointer;font-size:13px;color:#64748b;">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA STORE =====
+// Varsayılan veriler — localStorage'da yoksa bunlar kullanılır
+const DEFAULT_DB = {
+  users: [
+    {tc:'11111111111', pass:'Admin123!', role:'admin', name:'Yönetici', apt:'', block:'', email:'yonetici@site.com', phone:'+90(500 000 00 00)'},
+  ],
+  payments: [],
+  arizalar: [],
+  duyurular: [],
+  oylamalar: [],
+  bildirimler: [],
+  ibanlar: [],
+  mesajlar: {},
+  gelirGider: [],
+  dekontlar: [],
+  ayarlar: {
+    siteAdi: '',
+    aidatTutari: 0,
+    yoneticiAdi: '',
+    email: '',
+  },
+};
+
+// ===== localStorage KALICI DEPOLAMA =====
+const LS_KEY = 'site_yonetim_db';
+
+const DB_VERSION = 2; // Örnek veriler temizlendi
+
+function loadDB() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    const savedVersion = parseInt(localStorage.getItem(LS_KEY + '_version') || '0');
+    // Versiyon eski veya veri yoksa sıfırla
+    if (!saved || savedVersion < DB_VERSION) {
+      localStorage.removeItem(LS_KEY);
+      localStorage.setItem(LS_KEY + '_version', DB_VERSION);
+      return JSON.parse(JSON.stringify(DEFAULT_DB));
+    }
+    const parsed = JSON.parse(saved);
+    Object.keys(DEFAULT_DB).forEach(k => {
+      if (!(k in parsed)) parsed[k] = DEFAULT_DB[k];
+    });
+    return parsed;
+  } catch(e) { console.warn('DB yüklenemedi, varsayılan kullanılıyor.'); }
+  return JSON.parse(JSON.stringify(DEFAULT_DB));
+}
+
+function saveDB() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(DB)); }
+  catch(e) { console.warn('DB kaydedilemedi:', e); }
+}
+
+// DB'yi yükle
+const DB = loadDB();
+
+let currentUser = null;
+let currentRole = null;
+let currentRegRole = 'admin';
+
+function goRegister(role) {
+  setRegRole(role);
+  showScreen('screen-register');
+}
+
+function setRegRole(role) {
+  currentRegRole = role;
+  const isAdmin = role === 'admin';
+  // Buton stilleri
+  document.getElementById('reg-btn-admin').style.cssText = isAdmin
+    ? 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;border:2px solid #1e3a5f;background:#1e3a5f;color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;'
+    : 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;border:2px solid #c7d9f0;background:#f0f6ff;color:#4a7ab5;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;';
+  document.getElementById('reg-btn-resident').style.cssText = !isAdmin
+    ? 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;border:2px solid #1e3a5f;background:#1e3a5f;color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;'
+    : 'display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;border:2px solid #c7d9f0;background:#f0f6ff;color:#4a7ab5;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;';
+  document.getElementById('reg-role-text').textContent = isAdmin ? 'Yönetici' : 'Sakin';
+  document.getElementById('reg-role-text').style.color = '#1e3a5f';
+  // Blok-Daire alanı sadece sakin için
+  document.getElementById('reg-apt-row').style.display = isAdmin ? 'none' : 'block';
+}
+
+// ===== FORM HELPERS =====
+function formatPhone(input) {
+  let digits = input.value.replace(/\D/g,'');
+  if(digits.startsWith('90')) digits = digits.slice(2);
+  if(digits.startsWith('0'))  digits = digits.slice(1);
+  digits = digits.slice(0,10);
+
+  let out = '+90(';
+  if(digits.length > 0) out += digits.slice(0,3);
+  if(digits.length >= 4) out += ' ' + digits.slice(3,6);
+  if(digits.length >= 7) out += ' ' + digits.slice(6,8);
+  if(digits.length >= 9) out += ' ' + digits.slice(8,10);
+  if(digits.length > 0)  out += ')';
+  else out = '';
+
+  input.value = out || '+90(';
+  setTimeout(()=>{ try{input.setSelectionRange(input.value.length,input.value.length);}catch(e){} },0);
+}
+
+function validateTC(input) {
+  const v = input.value.replace(/\D/g,'');
+  input.value = v;
+  const err = document.getElementById('reg-tc-err');
+  if(err) err.style.display = (v.length>0 && v.length<11) ? 'block' : 'none';
+  input.classList.toggle('input-error', v.length>0 && v.length<11);
+}
+
+function validatePass(input) {
+  const v = input.value;
+  const rules = {
+    len:     v.length >= 7,
+    upper:   /[A-Z]/.test(v),
+    lower:   /[a-z]/.test(v),
+    digit:   /[0-9]/.test(v),
+    special: /[/*\-+,.<!'%^&]/.test(v),
+  };
+  Object.entries(rules).forEach(([key,ok])=>{
+    const el = document.getElementById('rule-'+key);
+    if(!el) return;
+    el.classList.toggle('ok', ok);
+    el.textContent = (ok?'✓':'✗') + el.textContent.slice(1);
+  });
+  const allOk = Object.values(rules).every(Boolean);
+  input.classList.toggle('input-error', v.length>0 && !allOk);
+  input.style.borderColor = v.length===0 ? '' : allOk ? '#16a34a' : '#dc2626';
+}
+
+function togglePassVis(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if(!inp) return;
+  if(inp.type==='password'){ inp.type='text'; if(ico) ico.className='fa-solid fa-eye-slash'; }
+  else { inp.type='password'; if(ico) ico.className='fa-solid fa-eye'; }
+}
+
+function sifremiUnuttum() {
+  document.getElementById('sifre-unut-tc').value='';
+  const msg = document.getElementById('sifre-unut-msg');
+  if(msg){ msg.style.display='none'; msg.textContent=''; }
+  openModal('modal-sifre-unut');
+}
+
+function doSifreUnut() {
+  const tc = document.getElementById('sifre-unut-tc').value.trim();
+  const msg = document.getElementById('sifre-unut-msg');
+  if(tc.length!==11){ msg.style.cssText='display:block;background:#fee2e2;color:#dc2626;'; msg.textContent='T.C. Kimlik No 11 haneli olmalıdır.'; return; }
+  const user = DB.users.find(u=>u.tc===tc);
+  if(!user){ msg.style.cssText='display:block;background:#fee2e2;color:#dc2626;'; msg.textContent='Bu T.C. numarasına kayıtlı hesap bulunamadı.'; return; }
+  msg.style.cssText='display:block;background:#f0fdf4;color:#16a34a;';
+  msg.textContent=`Şifre sıfırlama bağlantısı ${user.email||'kayıtlı e-posta adresinize'} gönderildi.`;
+}
+
+// ===== SCREEN MANAGEMENT =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function selectRole(role) {
+  currentRole = role;
+  const isAdmin = role === 'admin';
+  document.getElementById('login-role-icon').innerHTML = isAdmin
+    ? '<i class="fa-solid fa-building-columns"></i>'
+    : '<i class="fa-solid fa-house"></i>';
+  document.getElementById('login-role-icon').style.background = isAdmin ? '#1e3a5f' : '#4a7ab5';
+  document.getElementById('login-role-label').textContent = isAdmin ? 'Yönetici Girişi' : 'Sakin Girişi';
+  showScreen('screen-login');
+}
+
+// ===== AUTH =====
+function doLogin() {
+  const tc   = document.getElementById('login-tc').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const err  = document.getElementById('login-error');
+
+  const user = DB.users.find(u => u.tc === tc && u.pass === pass);
+
+  // Kullanıcı bulunamadı
+  if (!user) {
+    err.textContent = 'TC veya şifre hatalı.';
+    err.style.display = 'block';
+    return;
+  }
+
+  // Rol uyuşmazlığı: sakin yönetici girişi yapmaya çalışıyor
+  if (currentRole === 'admin' && user.role !== 'admin') {
+    err.textContent = 'Bu hesap yönetici değil. Sakin girişini kullanın.';
+    err.style.display = 'block';
+    return;
+  }
+  // Rol uyuşmazlığı: yönetici sakin girişi yapmaya çalışıyor
+  if (currentRole === 'resident' && user.role !== 'resident') {
+    err.textContent = 'Bu hesap sakin değil. Yönetici girişini kullanın.';
+    err.style.display = 'block';
+    return;
+  }
+
+  err.style.display = 'none';
+  // Formu temizle
+  document.getElementById('login-tc').value   = '';
+  document.getElementById('login-pass').value = '';
+
+  currentUser = user;
+  if (user.role === 'admin') {
+    document.getElementById('admin-avatar').textContent = user.name.charAt(0);
+    const pma = document.getElementById('profil-menu-avatar');
+    const pmn = document.getElementById('profil-menu-name');
+    if(pma) pma.textContent = user.name.charAt(0);
+    if(pmn) pmn.textContent = user.name;
+    renderAdminData();
+    renderBildirimler();
+    showScreen('screen-admin');
+    adminNav('home');
+  } else {
+    document.getElementById('res-topbar-name').textContent = user.name;
+    document.getElementById('res-avatar').textContent = user.name.charAt(0);
+    document.getElementById('res-daire-no').textContent = user.apt;
+    document.getElementById('res-daire-info').textContent = user.name + ' - ' + user.block;
+    // Profil sayfası
+    const pn=document.getElementById('profil-name'); if(pn) pn.value=user.name;
+    const pe=document.getElementById('profil-email'); if(pe) pe.value=user.email||'';
+    const pp=document.getElementById('profil-phone'); if(pp) pp.value=user.phone||'';
+    const pd=document.getElementById('profil-daire'); if(pd) pd.value=user.apt;
+    // Sakin profil menüsü
+    const rpa = document.getElementById('res-profil-menu-avatar');
+    const rpn = document.getElementById('res-profil-menu-name');
+    const rpd = document.getElementById('res-profil-menu-daire');
+    if(rpa) rpa.textContent = user.name.charAt(0);
+    if(rpn) rpn.textContent = user.name;
+    if(rpd) rpd.textContent = user.apt + ' · ' + user.block;
+    renderResidentData();
+    updateResAidatKart();
+    showScreen('screen-resident');
+    resNav('home');
+  }
+}
+
+function doRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const tc    = document.getElementById('reg-tc').value.trim();
+  const apt   = currentRegRole === 'resident' ? document.getElementById('reg-apt').value.trim() : '';
+  const pass  = document.getElementById('reg-pass').value.trim();
+
+  if (!name||!email||!phone||!tc||!pass) { alert('Tüm alanları doldurun.'); return; }
+  if (currentRegRole === 'resident' && !apt) { alert('Blok-Daire No girin.'); return; }
+  if (tc.length !== 11) { alert('T.C. Kimlik No 11 haneli olmalıdır.'); return; }
+  if (DB.users.find(u => u.tc === tc)) { alert('Bu T.C. numarası zaten kayıtlı.'); return; }
+
+  // Şifre validasyonu
+  const passRules = {
+    len:     pass.length >= 7,
+    upper:   /[A-Z]/.test(pass),
+    lower:   /[a-z]/.test(pass),
+    digit:   /[0-9]/.test(pass),
+    special: /[/*\-+,.<!'%^&]/.test(pass),
+  };
+  if(!Object.values(passRules).every(Boolean)){
+    document.getElementById('reg-pass').classList.add('input-error');
+    document.getElementById('reg-pass').style.borderColor='#dc2626';
+    alert('Şifre gereksinimleri karşılanmıyor. Lütfen şifre kurallarını kontrol edin.');
+    return;
+  }
+
+  const block = apt ? apt.split('-')[0] + ' Blok' : '';
+  DB.users.push({tc, pass, role: currentRegRole, name, apt, block, email, phone});
+  if (currentRegRole === 'resident') {
+    DB.payments.push({id:Date.now(), daire:apt, name, block, status:'unpaid', amount:500, date:new Date().toLocaleDateString('tr-TR'), desc:'İlk aidat'});
+  }
+  ['reg-name','reg-email','reg-phone','reg-tc','reg-apt','reg-pass'].forEach(id=>{
+    const el=document.getElementById(id); if(el){ el.value=''; el.style.borderColor=''; el.classList.remove('input-error'); }
+  });
+  // Şifre kurallarını sıfırla
+  ['len','upper','lower','digit','special'].forEach(k=>{
+    const el=document.getElementById('rule-'+k); if(el){ el.classList.remove('ok'); el.textContent=el.textContent.replace('✓','✗'); }
+  });
+  showToast(currentRegRole === 'admin' ? 'Yönetici kaydı oluşturuldu.' : 'Sakin kaydı oluşturuldu.');
+  saveDB();
+  showScreen('screen-role');
+}
+
+function logout() {
+  currentUser = null; currentRole = null;
+  // Login formu temizle
+  document.getElementById('login-tc').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').style.display='none';
+  // Kayıt formu tamamen temizle
+  ['reg-name','reg-email','reg-phone','reg-tc','reg-apt','reg-pass'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  setRegRole('admin'); // varsayılana döndür
+  showScreen('screen-role');
+}
+
+// ===== ADMIN NAVIGATION =====
+function adminNav(page) {
+  document.querySelectorAll('[id^="nav-admin-"]').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.admin-page').forEach(el => el.style.display='none');
+  document.getElementById('nav-admin-'+page).classList.add('active');
+  document.getElementById('admin-page-'+page).style.display='block';
+  if (page === 'ayarlar') loadAyarlar();
+  closeSidebar();
+}
+
+function renderAdminData() {
+  renderAdminAidatList('admin-aidat-list', 4);
+  renderAdminAidatList('admin-aidat-full-list', 999);
+  renderAdminArizaHome();
+  renderAdminArizaFull();
+  renderDuyurular();
+  renderOylamalar();
+  renderSakinler();
+  renderAdminIBAN();
+  renderAdminMesajlar();
+  renderGelirGider();
+  renderAdminDekontList();
+  updateAidatKart();
+}
+
+function renderAdminAidatList(containerId, limit) {
+  const c = document.getElementById(containerId); if(!c) return;
+  const blokFilter = containerId==='admin-aidat-list' ? (document.getElementById('home-blok-filter')||{value:''}).value : '';
+  let items = blokFilter ? DB.payments.filter(p=>p.block===blokFilter) : DB.payments;
+  items = items.slice(0, limit);
+  c.innerHTML = items.map(p => `
+    <div style="display:grid;grid-template-columns:34px 75px 1fr 75px 115px 70px 165px;align-items:center;padding:10px 18px;border-bottom:1px solid #f8fafc;font-size:13px;" onmouseover="this.style.background='#fafbfc'" onmouseout="this.style.background=''">
+      <div><input type="checkbox" style="accent-color:#1a2e4a;width:14px;height:14px;cursor:pointer;"></div>
+      <div style="font-weight:600;color:#1e293b;">${p.daire}</div>
+      <div style="color:#374151;">${p.name}</div>
+      <div style="color:#64748b;font-size:12.5px;">${p.block}</div>
+      <div>${p.status==='paid'
+        ?'<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-circle-check" style="font-size:10px;"></i> Ödendi</span>'
+        :'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-circle-xmark" style="font-size:10px;"></i> Ödenmedi</span>'}</div>
+      <div style="font-weight:600;color:#1e293b;font-size:13px;">${p.amount}₺</div>
+      <div style="display:flex;gap:6px;">
+        <button onclick="showDetail('Ödeme Detayı','Daire: ${p.daire}<br>Sakin: ${p.name}<br>Tutar: ₺${p.amount}<br>Durum: ${p.status==="paid"?"Ödendi":"Ödenmedi"}<br>Tarih: ${p.date}<br>Açıklama: ${p.desc}')"
+          style="background:#1a2e4a;color:#fff;border:none;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Detay</button>
+        ${p.status==='unpaid'?`<button onclick="markPaid(${p.id})"
+          style="background:#fff;color:#1a2e4a;border:1.5px solid #1a2e4a;padding:4px 10px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Ödeme Ekle</button>`:''}
+      </div>
+    </div>`).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;">Kayıt bulunamadı.</div>';
+}
+
+function filterAidatHome(val) { renderAdminAidatList('admin-aidat-list', 10); }
+
+function markPaid(id) {
+  const p = DB.payments.find(x=>x.id===id);
+  if(p) { p.status='paid'; renderAdminData(); showToast('Ödeme kaydedildi.'); }
+}
+
+function renderAdminArizaHome() {
+  const c = document.getElementById('admin-ariza-list-home'); if(!c) return;
+  const iconMap = {Asansör:'elevator', Elektrik:'lightbulb', Su:'droplet', Isıtma:'fire', Diğer:'wrench'};
+  // Sadece açık (waiting/repair) arızaları göster, done olanları değil
+  const aktif = DB.arizalar.filter(a => a.status !== 'done');
+  const acil  = DB.arizalar.filter(a => a.urgent && a.status !== 'done');
+  // Home stat kartlarını güncelle
+  const aktifEl = document.getElementById('home-ariza-aktif');
+  const acilEl  = document.getElementById('home-ariza-acil');
+  if(aktifEl) aktifEl.textContent = aktif.length;
+  if(acilEl)  acilEl.textContent  = acil.length;
+
+  c.innerHTML = DB.arizalar.slice(0,4).map(a => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid #f8fafc;" onmouseover="this.style.background='#fafbfc'" onmouseout="this.style.background=''">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:7px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-${iconMap[a.type]||'wrench'}" style="color:#64748b;font-size:13px;"></i>
+        </div>
+        <span style="font-size:13px;font-weight:500;color:#1e293b;">${a.title}</span>
+        ${a.urgent?'<span style="font-size:15px;line-height:1;">⚠️</span>':''}
+      </div>
+      <span style="${a.status==='waiting'?'background:#fef9c3;color:#ca8a04;':a.status==='repair'?'background:#dbeafe;color:#2563eb;':'background:#dcfce7;color:#16a34a;'}padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;white-space:nowrap;">
+        ${a.status==='waiting'?'Bekliyor':a.status==='repair'?'Tamirde':'Tamamlandı'}
+      </span>
+    </div>`).join('');
+}
+
+function renderAdminArizaFull() {
+  const c = document.getElementById('admin-ariza-full-list'); if(!c) return;
+  const iconMap = {Asansör:'elevator', Elektrik:'lightbulb', Su:'droplet', Isıtma:'fire', Diğer:'wrench'};
+  c.innerHTML = DB.arizalar.map(a => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;" onmouseover="this.style.background='#fafbfc'" onmouseout="this.style.background=''">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-${iconMap[a.type]||'wrench'}" style="color:#64748b;font-size:13px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:600;color:#1e293b;font-size:13.5px;">${a.title} ${a.urgent?'<span style="color:#ef4444;font-size:11px;font-weight:700;background:#fee2e2;padding:1px 6px;border-radius:4px;">ACİL</span>':''}</div>
+          <div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">${a.date} · ${a.type} · ${a.desc}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="${a.status==='waiting'?'background:#fef9c3;color:#ca8a04;':a.status==='repair'?'background:#dbeafe;color:#2563eb;':'background:#dcfce7;color:#16a34a;'}padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;">
+          ${a.status==='waiting'?'Bekliyor':a.status==='repair'?'Tamirde':'Tamamlandı'}
+        </span>
+        ${a.status!=='done'?`<button onclick="updateArizaStatus(${a.id})"
+          style="background:#1a2e4a;color:#fff;border:none;padding:5px 11px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">
+          ${a.status==='waiting'?'Tamire Al':'Tamamlandı'}
+        </button>`:'<span style="font-size:12px;color:#94a3b8;">✓ Kapatıldı</span>'}
+      </div>
+    </div>`).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;">Arıza bildirimi yok.</div>';
+}
+
+function updateArizaStatus(id) {
+  const a = DB.arizalar.find(x=>x.id===id);
+  if(!a) return;
+  if(a.status==='waiting') a.status='repair';
+  else if(a.status==='repair') a.status='done';
+  renderAdminData();
+  showToast('Arıza durumu güncellendi.');
+}
+
+function renderDuyurular() {
+  const c = document.getElementById('duyuru-list'); if(!c) return;
+  if(DB.duyurular.length===0){c.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Henüz duyuru yok.</div>';return;}
+  c.innerHTML = DB.duyurular.map(d => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-bullhorn" style="color:#3b82f6;font-size:14px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:600;color:#1e293b;font-size:14px;">${d.title}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:2px;">${d.date} · ${d.content.substring(0,50)}${d.content.length>50?'...':''}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-primary" style="padding:6px 14px;font-size:12px;" onclick="showDetail('${d.title.replace(/'/g,"\\'")}','${d.content.replace(/'/g,"\\'")}')">Detay</button>
+        <button style="background:#fee2e2;color:#dc2626;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;" onclick="deleteDuyuru(${d.id})"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+  // Son duyuruyu home'da güncelle
+  const son = DB.duyurular[0];
+  const t=document.getElementById('home-son-duyuru-title');
+  const desc=document.getElementById('home-son-duyuru-desc');
+  if(t) t.textContent=son.title;
+  if(desc) desc.textContent=son.content.substring(0,50)+'...';
+}
+
+function deleteDuyuru(id) {
+  DB.duyurular = DB.duyurular.filter(d=>d.id!==id);
+  renderDuyurular(); renderResidentData(); showToast('Duyuru silindi.');
+}
+
+function renderOylamalar() {
+  const c = document.getElementById('oylama-list'); if(!c) return;
+  if(DB.oylamalar.length===0){c.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Henüz oylama yok.</div>';return;}
+  c.innerHTML = DB.oylamalar.map(o => {
+    const total = o.evet + o.hayir;
+    const ep = total ? Math.round(o.evet/total*100) : 0;
+    const hp = 100-ep;
+    const kazanan = ep > hp ? 'EVET' : ep < hp ? 'HAYIR' : 'EŞİT';
+    return `<div style="padding:18px 20px;border-bottom:1px solid #f1f5f9;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-weight:700;color:#1e293b;font-size:14px;">${o.soru}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:3px;">Toplam oy: ${total} · ${o.bitti?'<span style="color:#16a34a;font-weight:600;">Tamamlandı</span>':'<span style="color:#2563eb;font-weight:600;">Devam ediyor</span>'}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${!o.bitti?`<button onclick="bitirOylama(${o.id})" style="background:#f59e0b;color:#fff;border:none;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Oylamayı Bitir</button>`:''}
+          <button onclick="kararAcikla(${o.id})" style="background:#1a2e4a;color:#fff;border:none;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Karar Açıkla</button>
+          <button onclick="deleteOylama(${o.id})" style="background:#fee2e2;color:#dc2626;border:none;padding:5px 10px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;color:#374151;margin-bottom:4px;"><span>EVET</span><span>${ep}% (${o.evet} oy)</span></div>
+        <div style="background:#e8edf2;border-radius:4px;height:9px;"><div style="background:#1a2e4a;height:9px;border-radius:4px;width:${ep}%;transition:width .5s;"></div></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;color:#374151;margin-bottom:4px;"><span>HAYIR</span><span>${hp}% (${o.hayir} oy)</span></div>
+        <div style="background:#e8edf2;border-radius:4px;height:9px;"><div style="background:#ef4444;height:9px;border-radius:4px;width:${hp}%;transition:width .5s;"></div></div>
+      </div>
+      ${o.karar?`<div style="margin-top:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#15803d;"><i class="fa-solid fa-circle-check"></i> <strong>Karar:</strong> ${o.karar}</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Home poll güncelle
+  if(DB.oylamalar.length>0){
+    const o=DB.oylamalar[0]; const total=o.evet+o.hayir;
+    const ep=total?Math.round(o.evet/total*100):75;
+    const hp=100-ep;
+    const qEl=document.getElementById('poll-question-home');
+    const epEl=document.getElementById('poll-evet-pct');
+    const hpEl=document.getElementById('poll-hayir-pct');
+    const beEl=document.getElementById('poll-bar-evet');
+    const bhEl=document.getElementById('poll-bar-hayir');
+    if(qEl) qEl.textContent=o.soru;
+    if(epEl) epEl.textContent=ep+'%';
+    if(hpEl) hpEl.textContent=hp+'%';
+    if(beEl) beEl.style.width=ep+'%';
+    if(bhEl) bhEl.style.width=hp+'%';
+  }
+}
+
+function bitirOylama(id) {
+  const o = DB.oylamalar.find(x=>x.id===id);
+  if(!o) return;
+  o.bitti = true;
+  renderOylamalar();
+  showToast('Oylama tamamlandı.');
+}
+
+function kararAcikla(id) {
+  const o = DB.oylamalar.find(x=>x.id===id);
+  if(!o) return;
+  const total = o.evet+o.hayir;
+  const ep = total ? Math.round(o.evet/total*100) : 0;
+  const kazanan = ep > 50 ? 'EVET' : ep < 50 ? 'HAYIR' : 'EŞİT';
+  const karar = prompt(`"${o.soru}" oylaması için karar metnini girin:\n(Sonuç: ${kazanan} - EVET: ${o.evet}, HAYIR: ${o.hayir})`);
+  if(karar && karar.trim()) {
+    o.karar = karar.trim();
+    o.bitti = true;
+    renderOylamalar();
+    showToast('Karar açıklandı.');
+  }
+}
+
+function deleteOylama(id) {
+  if(!confirm('Bu oylamayı silmek istediğinize emin misiniz?')) return;
+  DB.oylamalar = DB.oylamalar.filter(o=>o.id!==id);
+  renderOylamalar();
+  showToast('Oylama silindi.');
+}
+
+function renderSakinler() {
+  const c = document.getElementById('sakinler-list'); if(!c) return;
+  const residents = DB.users.filter(u=>u.role==='resident');
+  if(residents.length===0){c.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Kayıtlı sakin yok.</div>';return;}
+  c.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 80px 90px 160px 130px 100px;padding:9px 18px;font-size:11.5px;font-weight:600;color:#94a3b8;border-bottom:1px solid #f1f5f9;">
+      <div>Ad Soyad</div><div>Daire</div><div>Blok</div><div>E-posta</div><div>Telefon</div><div>Aidat</div>
+    </div>` +
+  residents.map(u => {
+    const paid = DB.payments.find(p=>p.daire===u.apt&&p.status==='paid');
+    return `<div style="display:grid;grid-template-columns:1fr 80px 90px 160px 130px 100px;padding:11px 18px;border-bottom:1px solid #f8fafc;font-size:13px;align-items:center;" onmouseover="this.style.background='#fafbfc'" onmouseout="this.style.background=''">
+      <div style="font-weight:600;color:#1e293b;">${u.name}</div>
+      <div style="color:#64748b;">${u.apt||'-'}</div>
+      <div style="color:#64748b;">${u.block||'-'}</div>
+      <div style="color:#64748b;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.email||'-'}</div>
+      <div style="color:#64748b;font-size:12px;">${u.phone||'-'}</div>
+      <div>${paid
+        ?'<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;">Ödedi</span>'
+        :'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;">Ödemedi</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== RESIDENT NAVIGATION =====
+function resNav(page) {
+  document.querySelectorAll('[id^="nav-res-"]').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.res-page').forEach(el => el.style.display='none');
+  document.getElementById('nav-res-'+page).classList.add('active');
+  document.getElementById('res-page-'+page).style.display='block';
+  closeSidebarRes();
+}
+
+function renderResidentData() {
+  if(!currentUser) return;
+  const myPayments = DB.payments.filter(p=>p.daire===currentUser.apt);
+  renderPaymentList('res-payment-list', myPayments, 3);
+  renderPaymentList('res-payment-full-list', myPayments, 999);
+  renderResDuyurular();
+  renderResOylamalar();
+  renderResArizaHistory();
+  renderResBildirimler();
+  renderResIBAN();
+  renderResMesajlar();
+  renderResBorclar();
+  renderResBilgiKarti();
+  renderResIcra();
+  renderResGuncelDurum();
+  renderResDekontList();
+  fillDekontBankaSelect();
+}
+
+function renderPaymentList(id, payments, limit) {
+  const c = document.getElementById(id); if(!c) return;
+  c.innerHTML = payments.slice(0,limit).map(p => `
+    <div class="table-row resident-table-row" style="padding:11px 16px;">
+      <div style="color:#64748b;font-size:13px;">${p.date}</div>
+      <div style="font-weight:600;font-size:13px;">₺${p.amount}</div>
+      <div>${p.status==='paid'
+        ?'<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-circle-check" style="font-size:10px;"></i> Ödendi</span>'
+        :'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-circle-xmark" style="font-size:10px;"></i> Ödenmedi</span>'}</div>
+      <div style="color:#374151;font-size:13px;">${p.desc}</div>
+      <div>${p.status==='paid'
+        ?'<button style="background:#1a2e4a;color:#fff;border:none;padding:5px 11px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Dekont İndir</button>'
+        :`<button onclick="openOdemeModal(${p.id})" style="background:#dc2626;color:#fff;border:none;padding:5px 11px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-credit-card" style="font-size:10px;"></i> Ödeme Yap</button>`}</div>
+    </div>`).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;">Ödeme kaydı bulunamadı.</div>';
+}
+
+function renderResDuyurular() {
+  ['res-duyuru-list-home','res-duyuru-full-list'].forEach(id => {
+    const c = document.getElementById(id); if(!c) return;
+    c.innerHTML = DB.duyurular.length===0
+      ? '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;">Duyuru yok.</div>'
+      : DB.duyurular.map(d => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;gap:6px;" onmouseover="this.style.background='#fafbfc'" onmouseout="this.style.background=''">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-bullhorn" style="color:#3b82f6;font-size:13px;"></i>
+          </div>
+          <div>
+            <div style="font-size:13.5px;font-weight:600;color:#1e293b;">${d.title}</div>
+            <div style="font-size:11.5px;color:#94a3b8;">${d.date}</div>
+          </div>
+        </div>
+        <button onclick="showDetail('${d.title.replace(/'/g,"\\'")}','${d.content.replace(/'/g,"\\'")}${d.karar?'<br><br><strong>📋 Karar:</strong> '+d.karar:''}')"
+          style="background:#1a2e4a;color:#fff;border:none;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Detay</button>
+      </div>`).join('');
+  });
+}
+
+function renderResOylamalar() {
+  const c = document.getElementById('res-oylama-list'); if(!c) return;
+  if(DB.oylamalar.length===0){
+    c.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Aktif oylama yok.</div>';
+    return;
+  }
+  c.innerHTML = DB.oylamalar.map(o => {
+    const total = o.evet + o.hayir;
+    const ep = total ? Math.round(o.evet/total*100) : 0;
+    const hp = 100 - ep;
+    const voted = currentUser && o.voted.includes(currentUser.tc);
+    return `
+    <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:6px;">
+        <div>
+          <div style="font-weight:700;color:#1e293b;font-size:14px;">${o.soru}</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:3px;">
+            ${o.bitti
+              ? '<span style="color:#16a34a;font-weight:600;">✓ Tamamlandı</span>'
+              : '<span style="color:#2563eb;font-weight:600;">● Devam ediyor</span>'}
+            · ${total} oy
+          </div>
+        </div>
+        ${voted ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;">✓ Oy Kullandınız</span>' : ''}
+      </div>
+      <!-- Barlar -->
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;"><span>EVET</span><span>${ep}% (${o.evet})</span></div>
+        <div style="background:#e8edf2;border-radius:4px;height:8px;"><div style="background:#1a2e4a;height:8px;border-radius:4px;width:${ep}%;transition:width .5s;"></div></div>
+      </div>
+      <div style="margin-bottom:${o.karar||(!voted&&!o.bitti)?'12px':'4px'};">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;"><span>HAYIR</span><span>${hp}% (${o.hayir})</span></div>
+        <div style="background:#e8edf2;border-radius:4px;height:8px;"><div style="background:#ef4444;height:8px;border-radius:4px;width:${hp}%;transition:width .5s;"></div></div>
+      </div>
+      <!-- Karar kutusu (sadece karar açıklandıysa) -->
+      ${o.karar ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:13px;color:#15803d;margin-bottom:12px;"><i class="fa-solid fa-circle-check"></i> <strong>Karar:</strong> ${o.karar}</div>` : ''}
+      <!-- Oy butonları: sadece oy kullanmamış + oylama bitmemişse -->
+      ${!voted && !o.bitti ? `
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button onclick="resOyVer(${o.id},'evet')"
+            style="flex:1;background:#1a2e4a;color:#fff;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            👍 EVET
+          </button>
+          <button onclick="resOyVer(${o.id},'hayir')"
+            style="flex:1;background:#ef4444;color:#fff;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            👎 HAYIR
+          </button>
+        </div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Ana sayfadaki oylama widget'ını da güncelle
+  renderResHomeOylama();
+}
+
+function renderResHomeOylama() {
+  const c = document.getElementById('res-home-oylama'); if(!c) return;
+  const aktif = DB.oylamalar.filter(o=>!o.bitti);
+  if(aktif.length===0){
+    c.innerHTML='<div style="font-size:13px;color:#94a3b8;padding:8px 0;">Aktif oylama yok.</div>';
+    return;
+  }
+  const o = aktif[0];
+  const total = o.evet+o.hayir;
+  const ep = total ? Math.round(o.evet/total*100) : 0;
+  const hp = 100-ep;
+  const voted = currentUser && o.voted.includes(currentUser.tc);
+  c.innerHTML = `
+    <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px;">${o.soru}</div>
+    <div style="margin-bottom:6px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#374151;margin-bottom:3px;"><span>EVET</span><span>${ep}%</span></div>
+      <div style="background:#e8edf2;border-radius:4px;height:7px;"><div style="background:#1a2e4a;height:7px;border-radius:4px;width:${ep}%;transition:width .5s;"></div></div>
+    </div>
+    <div style="margin-bottom:${voted?'4px':'12px'};">
+      <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#374151;margin-bottom:3px;"><span>HAYIR</span><span>${hp}%</span></div>
+      <div style="background:#e8edf2;border-radius:4px;height:7px;"><div style="background:#ef4444;height:7px;border-radius:4px;width:${hp}%;transition:width .5s;"></div></div>
+    </div>
+    ${o.karar?`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;font-size:12px;color:#15803d;margin-bottom:10px;"><i class="fa-solid fa-circle-check"></i> <strong>Karar:</strong> ${o.karar}</div>`:''}
+    ${!voted?`
+      <div style="display:flex;gap:6px;">
+        <button onclick="resOyVer(${o.id},'evet')" style="flex:1;background:#1a2e4a;color:#fff;border:none;padding:8px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">👍 EVET</button>
+        <button onclick="resOyVer(${o.id},'hayir')" style="flex:1;background:#ef4444;color:#fff;border:none;padding:8px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">👎 HAYIR</button>
+      </div>`
+    :'<div style="font-size:12px;color:#16a34a;font-weight:600;">✓ Oy kullandınız</div>'}`;
+}
+
+function resOyVer(id, secim) {
+  if(!currentUser){alert('Giriş yapmalısınız.');return;}
+  const o = DB.oylamalar.find(x=>x.id===id);
+  if(!o||o.bitti){showToast('Bu oylama sona erdi.');return;}
+  if(o.voted.includes(currentUser.tc)){showToast('Zaten oy kullandınız.');return;}
+  if(secim==='evet') o.evet++; else o.hayir++;
+  o.voted.push(currentUser.tc);
+  renderResOylamalar();
+  renderOylamalar(); // admin tarafını da güncelle
+  showToast('Oyunuz kaydedildi.');
+}
+
+function resTabSwitch(tab) {
+  ['duyuru','oylama'].forEach(t=>{
+    document.getElementById('res-tab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('res-tab-content-'+t).style.display=t===tab?'block':'none';
+  });
+  if(tab==='oylama') renderResOylamalar();
+}
+
+function renderResArizaHistory() {
+  const c = document.getElementById('res-ariza-history'); if(!c||!currentUser) return;
+  const myArizalar = DB.arizalar.filter(a=>a.tc===currentUser.tc);
+  if(myArizalar.length===0){c.innerHTML='<div style="padding:16px;color:#94a3b8;font-size:14px;">Henüz arıza bildirimi yok.</div>';return;}
+  c.innerHTML = myArizalar.map(a=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-weight:600;color:#1e293b;font-size:14px;">${a.title}</div>
+        <div style="font-size:12px;color:#94a3b8;">${a.date} · ${a.type}</div>
+      </div>
+      <span class="${a.status==='waiting'?'status-waiting':a.status==='repair'?'status-repair':'status-paid'}">${a.status==='waiting'?'Bekliyor':a.status==='repair'?'Tamirde':'Tamamlandı'}</span>
+    </div>`).join('');
+}
+
+// ===== ACTIONS =====
+function addPayment() {
+  const daire = document.getElementById('pay-daire').value.trim();
+  const tutar = parseInt(document.getElementById('pay-tutar').value)||500;
+  const desc = document.getElementById('pay-aciklama').value.trim()||'Aidat ödemesi';
+  if(!daire){alert('Daire no girin.');return;}
+  const user = DB.users.find(u=>u.apt===daire);
+  DB.payments.push({id:Date.now(),daire,name:user?user.name:'Bilinmiyor',block:user?user.block:'',status:'paid',amount:tutar,date:new Date().toLocaleDateString('tr-TR'),desc});
+  closeModal('modal-add-payment');
+  renderAdminData(); showToast('Ödeme eklendi.');
+}
+
+function addDuyuru() {
+  const title = document.getElementById('duyuru-baslik').value.trim();
+  const content = document.getElementById('duyuru-icerik').value.trim();
+  if(!title||!content){alert('Tüm alanları doldurun.');return;}
+  DB.duyurular.unshift({id:Date.now(),title,content,date:new Date().toLocaleDateString('tr-TR').slice(0,5)});
+  document.getElementById('duyuru-baslik').value='';
+  document.getElementById('duyuru-icerik').value='';
+  closeModal('modal-add-duyuru');
+  renderDuyurular(); renderResidentData(); showToast('Duyuru yayınlandı.');
+}
+
+function addOylama() {
+  const soru = document.getElementById('oylama-soru').value.trim();
+  if(!soru){alert('Soru girin.');return;}
+  DB.oylamalar.push({id:Date.now(),soru,evet:0,hayir:0,voted:[]});
+  document.getElementById('oylama-soru').value='';
+  closeModal('modal-add-oylama');
+  renderOylamalar(); showToast('Oylama oluşturuldu.');
+}
+
+function submitResAriza() {
+  const tur = document.getElementById('res-ariza-tur').value;
+  const konu = document.getElementById('res-ariza-konu').value.trim();
+  const aciklama = document.getElementById('res-ariza-aciklama').value.trim();
+  if(!konu){alert('Konu girin.');return;}
+  DB.arizalar.unshift({id:Date.now(),title:(currentUser?currentUser.block+' ':'')+konu,type:tur,status:'waiting',urgent:false,date:new Date().toLocaleDateString('tr-TR'),tc:currentUser?currentUser.tc:'',desc:aciklama});
+  document.getElementById('res-ariza-konu').value='';
+  document.getElementById('res-ariza-aciklama').value='';
+  addArizaBildirim((currentUser?currentUser.block+' ':'')+konu, false);
+  renderAdminData(); renderResidentData(); showToast('Arıza bildirimi gönderildi.');
+}
+
+function submitResAriza2() {
+  const tur = document.getElementById('res-ariza-tur2').value;
+  const konu = document.getElementById('res-ariza-konu2').value.trim();
+  const aciklama = document.getElementById('res-ariza-aciklama2').value.trim();
+  if(!konu){alert('Konu girin.');return;}
+  DB.arizalar.unshift({id:Date.now(),title:(currentUser?currentUser.block+' ':'')+konu,type:tur,status:'waiting',urgent:false,date:new Date().toLocaleDateString('tr-TR'),tc:currentUser?currentUser.tc:'',desc:aciklama});
+  document.getElementById('res-ariza-konu2').value='';
+  document.getElementById('res-ariza-aciklama2').value='';
+  renderAdminData(); renderResidentData(); showToast('Arıza bildirimi gönderildi.');
+}
+
+// ===== TABS =====
+function switchTab(tab) {
+  ['duyuru','oylama'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tab-content-'+t).style.display=t===tab?'block':'none';
+  });
+}
+
+// ===== MODALS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showDetail(title, content) {
+  document.getElementById('modal-detail-title').textContent=title;
+  document.getElementById('modal-detail-content').innerHTML=content;
+  openModal('modal-detail');
+}
+
+// ===== SIDEBAR MOBILE =====
+function toggleSidebar() {
+  document.getElementById('admin-sidebar').classList.toggle('open');
+  document.getElementById('mob-overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('admin-sidebar').classList.remove('open');
+  document.getElementById('mob-overlay').classList.remove('open');
+}
+function toggleSidebarRes() {
+  document.getElementById('resident-sidebar').classList.toggle('open');
+  document.getElementById('mob-overlay-res').classList.toggle('open');
+}
+function closeSidebarRes() {
+  document.getElementById('resident-sidebar').classList.remove('open');
+  document.getElementById('mob-overlay-res').classList.remove('open');
+}
+
+// ===== ÖDEME FONKSİYONLARI =====
+let aktifOdemeId = null;
+
+function openOdemeModal(paymentId) {
+  aktifOdemeId = paymentId;
+  const p = DB.payments.find(x=>x.id===paymentId);
+  if(!p) return;
+  document.getElementById('odeme-daire-label').textContent = p.daire;
+  document.getElementById('odeme-donem-label').textContent = p.date;
+  document.getElementById('odeme-tutar-label').textContent = '₺'+p.amount;
+  openModal('modal-odeme-yap');
+}
+
+function openModal_odeme_yap_from_home() {
+  // Ana sayfadan açılınca ilk ödenmemiş kaydı bul
+  if(!currentUser) return;
+  const unpaid = DB.payments.find(p=>p.daire===currentUser.apt && p.status==='unpaid');
+  if(unpaid) { openOdemeModal(unpaid.id); }
+  else { showToast('Tüm ödemeleriniz güncel.'); }
+}
+
+function selectYontem(yontem) {
+  document.getElementById('kart-alani').style.display   = yontem==='kart'   ? 'flex' : 'none';
+  document.getElementById('havale-alani').style.display = yontem==='havale' ? 'block': 'none';
+  document.getElementById('kart-alani').style.flexDirection = 'column';
+  document.getElementById('kart-alani').style.gap = '10px';
+  const kl = document.getElementById('yontem-kart-label');
+  const hl = document.getElementById('yontem-havale-label');
+  if(kl) kl.style.borderColor = yontem==='kart'   ? '#1a2e4a' : '#e2e8f0';
+  if(hl) hl.style.borderColor = yontem==='havale' ? '#1a2e4a' : '#e2e8f0';
+}
+
+function formatKart(input) {
+  let v = input.value.replace(/\D/g,'').substring(0,16);
+  input.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+
+function odemeYap() {
+  const yontem = document.querySelector('input[name="odeme-yontem"]:checked')?.value || 'kart';
+  if(yontem === 'havale') {
+    closeModal('modal-odeme-yap');
+    showToast('Havale bilgileri kopyalandı. Ödeme sonrası onaylanacak.');
+    return;
+  }
+  // Kart ile ödeme — basit validasyon
+  const kartNo = document.querySelector('#kart-alani input:first-of-type')?.value.replace(/\s/g,'');
+  if(!kartNo || kartNo.length < 16) { alert('Geçerli bir kart numarası girin.'); return; }
+
+  if(aktifOdemeId) {
+    const p = DB.payments.find(x=>x.id===aktifOdemeId);
+    if(p) {
+      p.status = 'paid';
+      p.date = new Date().toLocaleDateString('tr-TR');
+    }
+  } else if(currentUser) {
+    // Ana sayfadan açıldıysa ilk ödenmemişi öde
+    const unpaid = DB.payments.find(p=>p.daire===currentUser.apt && p.status==='unpaid');
+    if(unpaid) { unpaid.status='paid'; unpaid.date=new Date().toLocaleDateString('tr-TR'); }
+  }
+  aktifOdemeId = null;
+  closeModal('modal-odeme-yap');
+  renderResidentData();
+  updateResAidatKart();
+  renderAdminData();
+  saveDB();
+  showToast('Ödeme başarıyla tamamlandı.');
+}
+
+function updateResAidatKart() {
+  if(!currentUser) return;
+  const birim = DB.ayarlar?.aidatTutari || 0;
+  const tutarEl = document.getElementById('res-aidat-tutar');
+  if(tutarEl) tutarEl.textContent = birim > 0 ? '₺'+birim : '—';
+  const unpaid = DB.payments.find(p=>p.daire===currentUser.apt && p.status==='unpaid');
+  const durumEl = document.getElementById('res-aidat-durum');
+  const btnWrap = document.getElementById('res-aidat-btn-wrap');
+  const iconEl  = document.getElementById('res-aidat-icon');
+  if(unpaid) {
+    if(durumEl) durumEl.innerHTML='<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-circle-xmark" style="font-size:10px;"></i> Ödenmedi</span>';
+    if(btnWrap) btnWrap.style.display='block';
+    if(iconEl)  iconEl.innerHTML='<i class="fa-solid fa-circle-xmark" style="font-size:36px;color:#fca5a5;"></i>';
+    const odemelerBtn = document.getElementById('odemeler-btn');
+    if(odemelerBtn) odemelerBtn.style.display='flex';
+  } else {
+    if(durumEl) durumEl.innerHTML='<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-circle-check" style="font-size:10px;"></i> Ödendi</span>';
+    if(btnWrap) btnWrap.style.display='none';
+    if(iconEl)  iconEl.innerHTML='<i class="fa-solid fa-circle-check" style="font-size:36px;color:#86efac;"></i>';
+  }
+}
+
+// ===== IBAN FONKSİYONLARI =====
+function formatIBAN(input) {
+  let v = input.value.replace(/\s/g,'').toUpperCase();
+  input.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+
+function renderAdminIBAN() {
+  const c = document.getElementById('admin-iban-list'); if(!c) return;
+  if(DB.ibanlar.length===0){c.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">IBAN kaydı yok.</div>';return;}
+  c.innerHTML = DB.ibanlar.map(ib=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f8fafc;flex-wrap:wrap;gap:10px;" onmouseover="this.style.background='#fafbfc'" onmouseout="this.style.background=''">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-building-columns" style="color:#2563eb;font-size:15px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#1e293b;font-size:14px;">${ib.banka}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px;">${ib.sahip}</div>
+          <div style="font-size:12.5px;color:#374151;font-family:monospace;margin-top:3px;letter-spacing:.5px;">${ib.iban}</div>
+          ${ib.aciklama?`<div style="font-size:11.5px;color:#94a3b8;margin-top:2px;">${ib.aciklama}</div>`:''}
+        </div>
+      </div>
+      <button onclick="deleteIBAN(${ib.id})" style="background:#fee2e2;color:#dc2626;border:none;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
+    </div>`).join('');
+}
+
+function addIBAN() {
+  const banka = document.getElementById('iban-banka').value.trim();
+  const sahip = document.getElementById('iban-sahip').value.trim();
+  const iban  = document.getElementById('iban-no').value.trim();
+  const aciklama = document.getElementById('iban-aciklama').value.trim();
+  if(!banka||!iban){alert('Banka adı ve IBAN zorunludur.');return;}
+  DB.ibanlar.push({id:Date.now(), banka, sahip, iban, aciklama});
+  ['iban-banka','iban-sahip','iban-no','iban-aciklama'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  closeModal('modal-add-iban');
+  renderAdminIBAN();
+  renderResIBAN();
+  showToast('IBAN eklendi.');
+}
+
+function deleteIBAN(id) {
+  if(!confirm('Bu IBAN kaydını silmek istediğinize emin misiniz?'))return;
+  DB.ibanlar = DB.ibanlar.filter(x=>x.id!==id);
+  renderAdminIBAN(); renderResIBAN(); showToast('IBAN silindi.');
+}
+
+function renderResIBAN() {
+  const c = document.getElementById('res-iban-list'); if(!c) return;
+  if(DB.ibanlar.length===0){c.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Henüz IBAN kaydı eklenmemiş.</div>';return;}
+  c.innerHTML = DB.ibanlar.map(ib=>`
+    <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:42px;height:42px;border-radius:11px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-building-columns" style="color:#2563eb;font-size:17px;"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;color:#1e293b;font-size:15px;">${ib.banka}</div>
+            <div style="font-size:12.5px;color:#64748b;margin-top:2px;">${ib.sahip}</div>
+            ${ib.aciklama?`<div style="font-size:12px;color:#94a3b8;margin-top:2px;">${ib.aciklama}</div>`:''}
+          </div>
+        </div>
+        <button onclick="copyIBAN('${ib.iban}')" style="background:#1a2e4a;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;">
+          <i class="fa-solid fa-copy"></i> Kopyala
+        </button>
+      </div>
+      <div style="margin-top:14px;background:#f8fafc;border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span style="font-family:monospace;font-size:14px;font-weight:600;color:#1e293b;letter-spacing:.8px;">${ib.iban}</span>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#64748b;"><i class="fa-solid fa-circle-info" style="color:#94a3b8;"></i> Açıklama kısmına daire numaranızı yazmayı unutmayın.</div>
+    </div>`).join('');
+}
+
+function copyIBAN(iban) {
+  navigator.clipboard.writeText(iban.replace(/\s/g,'')).then(()=>{
+    showToast('IBAN kopyalandı: '+iban);
+  }).catch(()=>{
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = iban; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('IBAN kopyalandı.');
+  });
+}
+
+// ===== GELİR/GİDER FONKSİYONLARI =====
+function renderGelirGider() {
+  const c = document.getElementById('gelir-gider-list'); if(!c) return;
+  const gelir = DB.gelirGider.filter(x=>x.tur==='gelir').reduce((s,x)=>s+x.tutar,0);
+  const gider = DB.gelirGider.filter(x=>x.tur==='gider').reduce((s,x)=>s+x.tutar,0);
+  const net   = gelir - gider;
+  const gEl=document.getElementById('gelir-toplam'); if(gEl) gEl.textContent='₺'+gelir.toLocaleString('tr-TR');
+  const gdEl=document.getElementById('gider-toplam'); if(gdEl) gdEl.textContent='₺'+gider.toLocaleString('tr-TR');
+  const nEl=document.getElementById('net-bakiye'); if(nEl){ nEl.textContent='₺'+net.toLocaleString('tr-TR'); nEl.style.color=net>=0?'#16a34a':'#ef4444'; }
+  if(DB.gelirGider.length===0){c.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Kayıt yok.</div>';return;}
+  c.innerHTML = `<div style="display:grid;grid-template-columns:100px 1fr 100px 80px;padding:9px 18px;font-size:11.5px;font-weight:600;color:#94a3b8;border-bottom:1px solid #f1f5f9;">
+    <div>Tarih</div><div>Açıklama</div><div>Tutar</div><div>Tür</div></div>` +
+  [...DB.gelirGider].reverse().map(x=>`
+    <div style="display:grid;grid-template-columns:100px 1fr 100px 80px;align-items:center;padding:11px 18px;border-bottom:1px solid #f8fafc;font-size:13px;" onmouseover="this.style.background='#fafbfc'" onmouseout="this.style.background=''">
+      <div style="color:#64748b;font-size:12px;">${x.tarih}</div>
+      <div style="color:#1e293b;font-weight:500;">${x.aciklama}</div>
+      <div style="font-weight:700;color:${x.tur==='gelir'?'#16a34a':'#ef4444'};">${x.tur==='gelir'?'+':'-'}₺${x.tutar.toLocaleString('tr-TR')}</div>
+      <div><span style="background:${x.tur==='gelir'?'#dcfce7':'#fee2e2'};color:${x.tur==='gelir'?'#16a34a':'#ef4444'};padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600;">${x.tur==='gelir'?'Gelir':'Gider'}</span></div>
+    </div>`).join('');
+}
+
+function addGelirGider() {
+  const tur = document.querySelector('input[name="gelir-tur"]:checked')?.value||'gelir';
+  const aciklama = document.getElementById('gelir-aciklama').value.trim();
+  const tutar = parseFloat(document.getElementById('gelir-tutar').value)||0;
+  const tarih = document.getElementById('gelir-tarih').value || new Date().toISOString().slice(0,10);
+  if(!aciklama||!tutar){alert('Açıklama ve tutar zorunludur.');return;}
+  DB.gelirGider.push({id:Date.now(), tur, aciklama, tutar, tarih});
+  ['gelir-aciklama','gelir-tutar','gelir-tarih'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  closeModal('modal-add-gelir');
+  renderGelirGider();
+  showToast('Kayıt eklendi.');
+}
+
+// ===== MESAJLAŞMA FONKSİYONLARI =====
+let adminMsgTarget = null; // seçili sakin tc
+
+function renderAdminMesajlar() {
+  const c = document.getElementById('admin-msg-list'); if(!c) return;
+  const residents = DB.users.filter(u=>u.role==='resident');
+  c.innerHTML = residents.map(u=>{
+    const msgs = DB.mesajlar[u.tc]||[];
+    const last = msgs[msgs.length-1];
+    return `<div onclick="selectMsgUser('${u.tc}')" style="padding:12px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;${adminMsgTarget===u.tc?'background:#eff6ff;':''}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${adminMsgTarget===u.tc?'#eff6ff':''}'">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#1a2e4a;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">${u.name.charAt(0)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:13px;color:#1e293b;">${u.name}</div>
+          <div style="font-size:11.5px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${last?last.text:'Henüz mesaj yok'}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;">Sakin yok.</div>';
+}
+
+function selectMsgUser(tc) {
+  adminMsgTarget = tc;
+  const user = DB.users.find(u=>u.tc===tc);
+  const h = document.getElementById('admin-msg-header');
+  if(h&&user) h.innerHTML=`<div style="width:32px;height:32px;border-radius:50%;background:#1a2e4a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;">${user.name.charAt(0)}</div> ${user.name} — ${user.apt}`;
+  renderAdminMsgBody();
+  renderAdminMesajlar();
+}
+
+function renderAdminMsgBody() {
+  const c = document.getElementById('admin-msg-body'); if(!c||!adminMsgTarget) return;
+  const msgs = DB.mesajlar[adminMsgTarget]||[];
+  c.innerHTML = msgs.length===0
+    ? '<div style="text-align:center;color:#94a3b8;font-size:13px;margin-top:40px;">Henüz mesaj yok. İlk mesajı gönderin.</div>'
+    : msgs.map(m=>`
+      <div style="display:flex;justify-content:${m.from==='admin'?'flex-end':'flex-start'};">
+        <div style="max-width:70%;background:${m.from==='admin'?'#1a2e4a':'#f1f5f9'};color:${m.from==='admin'?'#fff':'#1e293b'};padding:10px 14px;border-radius:${m.from==='admin'?'14px 14px 4px 14px':'14px 14px 14px 4px'};font-size:13px;line-height:1.5;">
+          <div>${m.text}</div>
+          <div style="font-size:10.5px;opacity:.6;margin-top:4px;text-align:right;">${m.time}</div>
+        </div>
+      </div>`).join('');
+  c.scrollTop = c.scrollHeight;
+}
+
+function adminSendMsg() {
+  if(!adminMsgTarget){showToast('Önce bir sakin seçin.');return;}
+  const inp = document.getElementById('admin-msg-input');
+  const text = inp.value.trim(); if(!text) return;
+  if(!DB.mesajlar[adminMsgTarget]) DB.mesajlar[adminMsgTarget]=[];
+  DB.mesajlar[adminMsgTarget].push({from:'admin', text, time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})});
+  inp.value='';
+  renderAdminMsgBody();
+  renderAdminMesajlar();
+}
+
+function renderResMesajlar() {
+  if(!currentUser) return;
+  const tc = currentUser.tc;
+  if(!DB.mesajlar[tc]) DB.mesajlar[tc]=[];
+  const c = document.getElementById('res-msg-body'); if(!c) return;
+  const msgs = DB.mesajlar[tc];
+  c.innerHTML = msgs.length===0
+    ? '<div style="text-align:center;color:#94a3b8;font-size:13px;margin-top:40px;">Henüz mesaj yok. Yöneticiye mesaj gönderin.</div>'
+    : msgs.map(m=>`
+      <div style="display:flex;justify-content:${m.from==='resident'?'flex-end':'flex-start'};">
+        <div style="max-width:70%;background:${m.from==='resident'?'#1a2e4a':'#f1f5f9'};color:${m.from==='resident'?'#fff':'#1e293b'};padding:10px 14px;border-radius:${m.from==='resident'?'14px 14px 4px 14px':'14px 14px 14px 4px'};font-size:13px;line-height:1.5;">
+          <div>${m.text}</div>
+          <div style="font-size:10.5px;opacity:.6;margin-top:4px;text-align:right;">${m.time}</div>
+        </div>
+      </div>`).join('');
+  c.scrollTop = c.scrollHeight;
+}
+
+function resSendMsg() {
+  if(!currentUser) return;
+  const inp = document.getElementById('res-msg-input');
+  const text = inp.value.trim(); if(!text) return;
+  const tc = currentUser.tc;
+  if(!DB.mesajlar[tc]) DB.mesajlar[tc]=[];
+  DB.mesajlar[tc].push({from:'resident', text, time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})});
+  inp.value='';
+  renderResMesajlar();
+}
+
+// ===== BORÇLARIM =====
+function renderResBorclar() {
+  if(!currentUser) return;
+  const unpaid = DB.payments.filter(p=>p.daire===currentUser.apt && p.status==='unpaid');
+  const total  = unpaid.reduce((s,p)=>s+p.amount,0);
+  const oz = document.getElementById('res-borclar-ozet');
+  if(oz) oz.innerHTML=`
+    <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="font-size:12px;color:#64748b;margin-bottom:6px;">Toplam Borç</div>
+      <div style="font-size:26px;font-weight:800;color:${total>0?'#ef4444':'#16a34a'};">₺${total.toLocaleString('tr-TR')}</div>
+    </div>
+    <div style="background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="font-size:12px;color:#64748b;margin-bottom:6px;">Ödenmemiş Kalem</div>
+      <div style="font-size:26px;font-weight:800;color:#1a2e4a;">${unpaid.length}</div>
+    </div>`;
+  const c = document.getElementById('res-borclar-list'); if(!c) return;
+  if(unpaid.length===0){c.innerHTML='<div style="padding:24px;text-align:center;color:#16a34a;font-size:14px;font-weight:600;">✓ Tüm ödemeleriniz güncel!</div>';return;}
+  c.innerHTML = unpaid.map(p=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f8fafc;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-weight:600;color:#1e293b;font-size:14px;">${p.desc}</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:2px;">${p.date}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-weight:700;color:#ef4444;font-size:15px;">₺${p.amount}</span>
+        <button onclick="openOdemeModal(${p.id})" style="background:#1a2e4a;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;"><i class="fa-solid fa-credit-card"></i> Öde</button>
+      </div>
+    </div>`).join('');
+}
+
+// ===== BİLGİ KARTI =====
+function renderBilgiKarti() {
+  if(!currentUser) return;
+  const c = document.getElementById('bilgi-daire'); if(!c) return;
+  c.innerHTML = [
+    ['Ad Soyad', currentUser.name],
+    ['Daire No', currentUser.apt||'-'],
+    ['Blok', currentUser.block||'-'],
+    ['E-posta', currentUser.email||'-'],
+    ['Telefon', currentUser.phone||'-'],
+    ['T.C. No', '***********'],
+  ].map(([k,v])=>`
+    <div style="display:flex;justify-content:space-between;font-size:13px;border-bottom:1px solid #f8fafc;padding-bottom:8px;">
+      <span style="color:#64748b;">${k}</span><span style="font-weight:600;color:#1e293b;">${v}</span>
+    </div>`).join('');
+}
+
+function renderResBilgiKarti() {
+  renderBilgiKarti();
+}
+
+// ===== AYARLAR =====
+function loadAyarlar() {
+  if (!DB.ayarlar) DB.ayarlar = {siteAdi:'', aidatTutari:0, yoneticiAdi:'', email:''};
+  const a = DB.ayarlar;
+  const sa=document.getElementById('ayar-site-adi'); if(sa) sa.value=a.siteAdi||'';
+  const at=document.getElementById('ayar-aidat');    if(at) at.value=a.aidatTutari||'';
+  const ay=document.getElementById('ayar-yonetici'); if(ay) ay.value=a.yoneticiAdi||'';
+  const ae=document.getElementById('ayar-email');    if(ae) ae.value=a.email||'';
+}
+
+function ayarlariKaydet() {
+  if (!DB.ayarlar) DB.ayarlar = {};
+  DB.ayarlar.siteAdi     = document.getElementById('ayar-site-adi')?.value.trim() || '';
+  DB.ayarlar.aidatTutari = parseFloat(document.getElementById('ayar-aidat')?.value) || 0;
+  DB.ayarlar.yoneticiAdi = document.getElementById('ayar-yonetici')?.value.trim() || '';
+  DB.ayarlar.email       = document.getElementById('ayar-email')?.value.trim() || '';
+  updateAidatKart();
+  showToast('Ayarlar kaydedildi.');
+}
+
+function updateAidatKart() {
+  const birim = DB.ayarlar?.aidatTutari || 0;
+  const residents = DB.users.filter(u=>u.role==='resident');
+  const total = residents.length;
+  const odendi = DB.payments.filter(p=>p.status==='paid').length;
+  const toplam = total * birim;
+  const odendiToplam = odendi * birim;
+  const pct = total > 0 ? Math.round(odendi/total*100) : 0;
+  const circumference = 144.5;
+  const offset = circumference - (pct/100)*circumference;
+
+  const totEl = document.getElementById('home-aidat-total');
+  const pctEl = document.getElementById('home-aidat-pct');
+  const birEl = document.getElementById('home-aidat-birim');
+  const ring  = document.getElementById('home-aidat-ring');
+
+  if(totEl) totEl.textContent = birim > 0 ? '₺'+odendiToplam.toLocaleString('tr-TR') : '—';
+  if(pctEl) pctEl.textContent = '%'+pct;
+  if(birEl) birEl.textContent = birim > 0 ? '₺'+birim : 'Belirlenmedi';
+  if(ring)  ring.style.strokeDashoffset = offset;
+}
+
+function profilGuncelle() {
+  if (!currentUser) return;
+  const name  = document.getElementById('profil-name')?.value.trim();
+  const email = document.getElementById('profil-email')?.value.trim();
+  const phone = document.getElementById('profil-phone')?.value.trim();
+  if (!name) { alert('Ad Soyad boş olamaz.'); return; }
+  currentUser.name  = name;
+  currentUser.email = email;
+  currentUser.phone = phone;
+  // DB'deki kullanıcıyı güncelle
+  const u = DB.users.find(x=>x.tc===currentUser.tc);
+  if (u) { u.name=name; u.email=email; u.phone=phone; }
+  // Topbar ve profil menüsünü güncelle
+  const tn=document.getElementById('res-topbar-name'); if(tn) tn.textContent=name;
+  const av=document.getElementById('res-avatar'); if(av) av.textContent=name.charAt(0);
+  const pma=document.getElementById('res-profil-menu-avatar'); if(pma) pma.textContent=name.charAt(0);
+  const pmn=document.getElementById('res-profil-menu-name'); if(pmn) pmn.textContent=name;
+  renderResBilgiKarti();
+  showToast('Profil güncellendi.');
+}
+
+// ===== İCRA DOSYALARI =====
+function renderResIcra() {
+  const c = document.getElementById('res-icra-list'); if(!c||!currentUser) return;
+  // Sakin için icra dosyaları — ödenmemiş ve gecikmiş ödemelerden oluşur
+  const gecikmiş = DB.payments.filter(p=>p.daire===currentUser.apt && p.status==='unpaid');
+  if(gecikmiş.length===0){
+    c.innerHTML=`<div style="background:#fff;border-radius:12px;padding:32px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <i class="fa-solid fa-circle-check" style="font-size:40px;color:#16a34a;margin-bottom:12px;display:block;"></i>
+      <div style="font-weight:700;color:#1e293b;font-size:15px;">İcra dosyanız bulunmamaktadır</div>
+      <div style="font-size:13px;color:#64748b;margin-top:6px;">Tüm ödemeleriniz güncel durumda.</div>
+    </div>`;
+    return;
+  }
+  c.innerHTML = gecikmiş.map((p,i)=>`
+    <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid #ef4444;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <i class="fa-solid fa-lock" style="color:#ef4444;font-size:14px;"></i>
+            <span style="font-weight:700;color:#1e293b;font-size:14px;">Dosya No: ${String(2026001+i).padStart(8,'0')}</span>
+            <span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">Aktif</span>
+          </div>
+          <div style="font-size:13px;color:#374151;margin-bottom:4px;"><strong>Konu:</strong> ${p.desc} — Ödenmemiş Aidat</div>
+          <div style="font-size:12px;color:#94a3b8;">Vade Tarihi: ${p.date} · Daire: ${p.daire}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:20px;font-weight:800;color:#ef4444;">₺${p.amount}</div>
+          <button onclick="openOdemeModal(${p.id})" style="margin-top:8px;background:#1a2e4a;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;">Ödeyerek Kapat</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ===== GÜNCEL DURUM =====
+function renderResGuncelDurum() {
+  const c = document.getElementById('res-durum-content'); if(!c||!currentUser) return;
+  const myPayments = DB.payments.filter(p=>p.daire===currentUser.apt);
+  const unpaid = myPayments.filter(p=>p.status==='unpaid');
+  const paid   = myPayments.filter(p=>p.status==='paid');
+  const myArizalar = DB.arizalar.filter(a=>a.tc===currentUser.tc);
+  const aktifAriza = myArizalar.filter(a=>a.status!=='done');
+  const sonDuyuru  = DB.duyurular[0];
+  const aktifOylama = DB.oylamalar.filter(o=>!o.bitti);
+  const voted = aktifOylama.filter(o=>o.voted.includes(currentUser.tc));
+
+  c.innerHTML = `
+    <!-- Aidat Durumu -->
+    <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+        <i class="fa-solid fa-turkish-lira-sign" style="color:#1a2e4a;"></i> AİDAT DURUMU
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div style="text-align:center;padding:12px;background:#f8fafc;border-radius:9px;">
+          <div style="font-size:22px;font-weight:800;color:#16a34a;">${paid.length}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">Ödendi</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:#f8fafc;border-radius:9px;">
+          <div style="font-size:22px;font-weight:800;color:#ef4444;">${unpaid.length}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">Bekliyor</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:#f8fafc;border-radius:9px;">
+          <div style="font-size:22px;font-weight:800;color:#1a2e4a;">₺${unpaid.reduce((s,p)=>s+p.amount,0)}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">Toplam Borç</div>
+        </div>
+      </div>
+      ${unpaid.length>0?`<button onclick="resNav('borclar')" style="margin-top:12px;width:100%;background:#ef4444;color:#fff;border:none;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Borçlarımı Gör</button>`:'<div style="margin-top:10px;text-align:center;font-size:13px;color:#16a34a;font-weight:600;">✓ Tüm ödemeler güncel</div>'}
+    </div>
+
+    <!-- Arıza Durumu -->
+    <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+        <i class="fa-solid fa-triangle-exclamation" style="color:#1a2e4a;"></i> ARIZA BİLDİRİMLERİM
+      </div>
+      ${aktifAriza.length===0
+        ? '<div style="text-align:center;color:#16a34a;font-size:13px;font-weight:600;padding:8px;">✓ Aktif arıza bildirimi yok</div>'
+        : aktifAriza.map(a=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f8fafc;">
+            <span style="font-size:13px;color:#374151;">${a.title}</span>
+            <span style="${a.status==='waiting'?'background:#fef9c3;color:#ca8a04;':'background:#dbeafe;color:#2563eb;'}padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;">
+              ${a.status==='waiting'?'Bekliyor':'Tamirde'}
+            </span>
+          </div>`).join('')}
+    </div>
+
+    <!-- Oylama Durumu -->
+    <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+        <i class="fa-solid fa-check-to-slot" style="color:#1a2e4a;"></i> OYLAMA DURUMU
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+        <span style="color:#64748b;">Aktif Oylama</span><span style="font-weight:700;color:#1e293b;">${aktifOylama.length}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;">
+        <span style="color:#64748b;">Oy Kullandığım</span><span style="font-weight:700;color:#16a34a;">${voted.length}</span>
+      </div>
+      ${aktifOylama.length>voted.length?`<button onclick="resNav('duyuru')" style="margin-top:12px;width:100%;background:#1a2e4a;color:#fff;border:none;padding:9px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Oylamalara Katıl</button>`:''}
+    </div>
+
+    <!-- Son Duyuru -->
+    ${sonDuyuru?`
+    <div style="background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+      <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+        <i class="fa-solid fa-bullhorn" style="color:#1a2e4a;"></i> SON DUYURU
+      </div>
+      <div style="font-weight:700;color:#1e293b;font-size:14px;margin-bottom:4px;">${sonDuyuru.title}</div>
+      <div style="font-size:13px;color:#64748b;">${sonDuyuru.content}</div>
+    </div>`:''}
+  `;
+}
+
+function renderResBildirimler() {
+  const c = document.getElementById('res-bildirim-list'); if(!c||!currentUser) return;
+  // Sakin için kişisel bildirimler: kendi arızaları + duyurular
+  const items = [];
+  DB.duyurular.slice(0,3).forEach(d => items.push({icon:'fa-bullhorn',color:'#3b82f6',bg:'#eff6ff',text:d.title,zaman:d.date}));
+  DB.arizalar.filter(a=>a.tc===currentUser.tc).slice(0,3).forEach(a => {
+    const durum = a.status==='waiting'?'Bekliyor':a.status==='repair'?'Tamirde':'Tamamlandı';
+    items.push({icon:'fa-wrench',color:'#64748b',bg:'#f1f5f9',text:a.title+' — '+durum,zaman:a.date});
+  });
+  const badge = document.getElementById('res-notif-badge');
+  if(badge){ badge.textContent=items.length; badge.style.display=items.length>0?'flex':'none'; }
+  c.innerHTML = items.length===0
+    ? '<div style="padding:20px;text-align:center;color:#94a3b8;font-size:13px;">Bildirim yok.</div>'
+    : items.map(b=>`
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid #f8fafc;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+        <div style="width:30px;height:30px;border-radius:8px;background:${b.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid ${b.icon}" style="color:${b.color};font-size:12px;"></i>
+        </div>
+        <div>
+          <div style="font-size:12.5px;color:#1e293b;font-weight:500;">${b.text}</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${b.zaman}</div>
+        </div>
+      </div>`).join('');
+}
+
+// ===== BİLDİRİMLER =====
+function renderBildirimler() {
+  const c = document.getElementById('bildirim-list'); if(!c) return;
+  const okunmamis = DB.bildirimler.filter(b=>!b.okundu).length;
+  const badge = document.getElementById('notif-badge');
+  if(badge) { badge.textContent=okunmamis; badge.style.display=okunmamis>0?'flex':'none'; }
+  c.innerHTML = DB.bildirimler.map(b => `
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:13px 18px;border-bottom:1px solid #f8fafc;background:${b.okundu?'#fff':'#f8fafc'};" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${b.okundu?'#fff':'#f8fafc'}'">
+      <div style="width:34px;height:34px;border-radius:9px;background:${b.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fa-solid ${b.icon}" style="color:${b.color};font-size:14px;"></i>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:13px;color:#1e293b;font-weight:${b.okundu?'400':'600'};">${b.text}</div>
+        <div style="font-size:11.5px;color:#94a3b8;margin-top:3px;">${b.zaman}</div>
+      </div>
+      ${!b.okundu?`<div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;flex-shrink:0;margin-top:4px;"></div>`:''}
+    </div>`).join('') || '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Bildirim yok.</div>';
+}
+
+function tumunuOku() {
+  DB.bildirimler.forEach(b=>b.okundu=true);
+  renderBildirimler();
+}
+
+// Yeni arıza eklenince bildirim oluştur
+function addArizaBildirim(title, urgent) {
+  DB.bildirimler.unshift({
+    id: Date.now(),
+    icon: urgent ? 'fa-triangle-exclamation' : 'fa-wrench',
+    color: urgent ? '#ef4444' : '#64748b',
+    bg: urgent ? '#fee2e2' : '#f1f5f9',
+    text: title + (urgent?' — Acil':''),
+    zaman: 'Az önce',
+    okundu: false
+  });
+  renderBildirimler();
+}
+function showToast(msg) {
+  saveDB(); // Her işlemde otomatik kaydet
+  const t = document.getElementById('modal-toast');
+  t.textContent=msg; t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
+
+// ===== RESPONSIVE =====
+function checkMobile() {
+  const isMob = window.innerWidth <= 768;
+  ['mob-menu-btn','mob-menu-btn-res'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display=isMob?'block':'none';
+  });
+}
+window.addEventListener('resize', checkMobile);
+window.addEventListener('orientationchange', checkMobile);
+checkMobile();
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ===== DEKONT FONKSİYONLARI =====
+let dekontDosya = null;
+
+function previewDekont(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { alert('Dosya 5MB\'dan büyük olamaz.'); input.value=''; return; }
+  dekontDosya = file;
+  const prev = document.getElementById('dekont-preview');
+  const fname = document.getElementById('dekont-filename');
+  if (prev) { prev.style.display='flex'; }
+  if (fname) fname.textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  const area = document.getElementById('dekont-drop-area');
+  if (area) area.style.borderColor = '#16a34a';
+}
+
+function clearDekont() {
+  dekontDosya = null;
+  const inp = document.getElementById('dekont-dosya');
+  if (inp) inp.value = '';
+  const prev = document.getElementById('dekont-preview');
+  if (prev) prev.style.display = 'none';
+  const area = document.getElementById('dekont-drop-area');
+  if (area) area.style.borderColor = '#c7d9f0';
+}
+
+function gonderdekont() {
+  if (!currentUser) return;
+  const banka   = document.getElementById('dekont-banka')?.value;
+  const tutar   = parseFloat(document.getElementById('dekont-tutar')?.value) || 0;
+  const tarih   = document.getElementById('dekont-tarih')?.value;
+  const not     = document.getElementById('dekont-not')?.value.trim() || '';
+
+  if (!banka)   { alert('Lütfen banka seçin.'); return; }
+  if (!tutar)   { alert('Lütfen tutar girin.'); return; }
+  if (!tarih)   { alert('Lütfen tarih seçin.'); return; }
+  if (!dekontDosya) { alert('Lütfen dekont dosyası seçin.'); return; }
+
+  const dekont = {
+    id: Date.now(),
+    tc: currentUser.tc,
+    name: currentUser.name,
+    daire: currentUser.apt,
+    banka, tutar, tarih, not,
+    dosyaAdi: dekontDosya.name,
+    durum: 'bekliyor',
+    zaman: new Date().toLocaleString('tr-TR'),
+  };
+  if (!DB.dekontlar) DB.dekontlar = [];
+  DB.dekontlar.unshift(dekont);
+
+  // Yöneticiye bildirim ekle
+  DB.bildirimler.unshift({
+    id: Date.now()+1,
+    icon: 'fa-file-invoice',
+    color: '#2563eb',
+    bg: '#dbeafe',
+    text: currentUser.name + ' dekont gönderdi — ₺' + tutar,
+    zaman: 'Az önce',
+    okundu: false,
+  });
+
+  // Formu temizle
+  ['dekont-banka','dekont-tutar','dekont-tarih','dekont-not'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  clearDekont();
+  renderResDekontList();
+  renderAdminDekontList();
+  showToast('Dekont başarıyla gönderildi.');
+}
+
+function renderResDekontList() {
+  const c = document.getElementById('res-dekont-list'); if(!c||!currentUser) return;
+  const myDekontlar = (DB.dekontlar||[]).filter(d=>d.tc===currentUser.tc);
+  if (myDekontlar.length===0) {
+    c.innerHTML='<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">Henüz dekont gönderilmedi.</div>';
+    return;
+  }
+  c.innerHTML = myDekontlar.map(d=>`
+    <div style="background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:34px;border-radius:9px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-file-invoice" style="color:#2563eb;font-size:14px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:600;color:#1e293b;font-size:13px;">${d.banka} — ₺${d.tutar}</div>
+          <div style="font-size:11.5px;color:#94a3b8;">${d.tarih} · ${d.dosyaAdi}</div>
+          ${d.not?`<div style="font-size:11.5px;color:#64748b;">${d.not}</div>`:''}
+        </div>
+      </div>
+      <span style="${d.durum==='bekliyor'?'background:#fef9c3;color:#ca8a04;':d.durum==='onaylandi'?'background:#dcfce7;color:#16a34a;':'background:#fee2e2;color:#dc2626;'}padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;">
+        ${d.durum==='bekliyor'?'Bekliyor':d.durum==='onaylandi'?'Onaylandı':'Reddedildi'}
+      </span>
+    </div>`).join('');
+}
+
+function renderAdminDekontList() {
+  const c = document.getElementById('admin-dekont-list'); if(!c) return;
+  const dekontlar = DB.dekontlar||[];
+  const badge = document.getElementById('admin-dekont-badge');
+  const bekleyen = dekontlar.filter(d=>d.durum==='bekliyor').length;
+  if (badge) { badge.textContent=bekleyen; badge.style.display=bekleyen>0?'flex':'none'; }
+  if (dekontlar.length===0) {
+    c.innerHTML='<div style="padding:24px;text-align:center;color:#94a3b8;font-size:13px;">Henüz dekont gönderilmedi.</div>';
+    return;
+  }
+  c.innerHTML = dekontlar.map(d=>`
+    <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fa-solid fa-file-invoice" style="color:#2563eb;font-size:15px;"></i>
+        </div>
+        <div>
+          <div style="font-weight:700;color:#1e293b;font-size:14px;">${d.name} — ${d.daire}</div>
+          <div style="font-size:12px;color:#64748b;">${d.banka} · ₺${d.tutar} · ${d.tarih}</div>
+          <div style="font-size:12px;color:#94a3b8;">${d.dosyaAdi}${d.not?' · '+d.not:''}</div>
+          <div style="font-size:11px;color:#b0bec5;">${d.zaman}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <span style="${d.durum==='bekliyor'?'background:#fef9c3;color:#ca8a04;':d.durum==='onaylandi'?'background:#dcfce7;color:#16a34a;':'background:#fee2e2;color:#dc2626;'}padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:600;">
+          ${d.durum==='bekliyor'?'Bekliyor':d.durum==='onaylandi'?'Onaylandı':'Reddedildi'}
+        </span>
+        ${d.durum==='bekliyor'?`
+          <button onclick="dekontOnayla(${d.id})" style="background:#16a34a;color:#fff;border:none;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Onayla</button>
+          <button onclick="dekontReddet(${d.id})" style="background:#dc2626;color:#fff;border:none;padding:5px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">Reddet</button>
+        `:''}
+      </div>
+    </div>`).join('');
+}
+
+function dekontOnayla(id) {
+  const d = (DB.dekontlar||[]).find(x=>x.id===id);
+  if (!d) return;
+  d.durum = 'onaylandi';
+  // Ödemeyi otomatik onayla
+  const p = DB.payments.find(x=>x.daire===d.daire && x.status==='unpaid');
+  if (p) { p.status='paid'; p.date=d.tarih; p.desc=d.banka+' havalesi'; }
+  renderAdminDekontList();
+  renderAdminData();
+  showToast('Dekont onaylandı, ödeme kaydedildi.');
+}
+
+function dekontReddet(id) {
+  const d = (DB.dekontlar||[]).find(x=>x.id===id);
+  if (!d) return;
+  d.durum = 'reddedildi';
+  renderAdminDekontList();
+  showToast('Dekont reddedildi.');
+}
+
+// Banka dropdown'ını doldur
+function fillDekontBankaSelect() {
+  const sel = document.getElementById('dekont-banka'); if(!sel) return;
+  sel.innerHTML = '<option value="">Banka seçin...</option>' +
+    (DB.ibanlar||[]).map(ib=>`<option value="${ib.banka}">${ib.banka} — ${ib.iban}</option>`).join('');
+}
+
+</script>
+</body>
+</html>
