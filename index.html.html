@@ -1257,15 +1257,25 @@ function loadDB() {
   try {
     const saved = localStorage.getItem(LS_KEY);
     const savedVersion = parseInt(localStorage.getItem(LS_KEY + '_version') || '0');
-    // Versiyon eski veya veri yoksa sıfırla
     if (!saved || savedVersion < DB_VERSION) {
       localStorage.removeItem(LS_KEY);
       localStorage.setItem(LS_KEY + '_version', DB_VERSION);
       return JSON.parse(JSON.stringify(DEFAULT_DB));
     }
     const parsed = JSON.parse(saved);
+    // Eksik alanları tamamla
     Object.keys(DEFAULT_DB).forEach(k => {
       if (!(k in parsed)) parsed[k] = DEFAULT_DB[k];
+    });
+    // DEFAULT_DB'deki admin her zaman var olsun (cihazdan bağımsız)
+    DEFAULT_DB.users.forEach(defUser => {
+      const exists = parsed.users.find(u => u.tc === defUser.tc);
+      if (!exists) parsed.users.push(JSON.parse(JSON.stringify(defUser)));
+      else {
+        // Şifre ve rol güncelle (sabit admin bilgileri korunsun)
+        exists.pass = defUser.pass;
+        exists.role = defUser.role;
+      }
     });
     return parsed;
   } catch(e) { console.warn('DB yüklenemedi, varsayılan kullanılıyor.'); }
