@@ -1250,45 +1250,85 @@ const DEFAULT_DB = {
 
 // ===== localStorage KALICI DEPOLAMA =====
 const LS_KEY = 'site_yonetim_db';
+const DB_VERSION = 2;
 
-const DB_VERSION = 2; // Örnek veriler temizlendi
+// ===== FİREBASE ENTEGRASYONU =====
+const FB_URL = 'https://sitem-d715c-default-rtdb.europe-west1.firebasedatabase.app';
+
+// Firebase'den veri oku
+async function fbGet(path) {
+  try {
+    const r = await fetch(FB_URL + path + '.json');
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+// Firebase'e veri yaz
+async function fbSet(path, data) {
+  try {
+    await fetch(FB_URL + path + '.json', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  } catch(e) { console.warn('Firebase yazma hatası:', e); }
+}
 
 function loadDB() {
+  // Başlangıçta localStorage'dan yükle (hızlı açılış için)
   try {
     const saved = localStorage.getItem(LS_KEY);
     const savedVersion = parseInt(localStorage.getItem(LS_KEY + '_version') || '0');
-    if (!saved || savedVersion < DB_VERSION) {
-      localStorage.removeItem(LS_KEY);
-      localStorage.setItem(LS_KEY + '_version', DB_VERSION);
-      return JSON.parse(JSON.stringify(DEFAULT_DB));
+    if (saved && savedVersion >= DB_VERSION) {
+      const parsed = JSON.parse(saved);
+      Object.keys(DEFAULT_DB).forEach(k => { if(!(k in parsed)) parsed[k]=DEFAULT_DB[k]; });
+      DEFAULT_DB.users.forEach(defUser => {
+        const exists = parsed.users.find(u=>u.tc===defUser.tc);
+        if(!exists) parsed.users.push(JSON.parse(JSON.stringify(defUser)));
+        else { exists.pass=defUser.pass; exists.role=defUser.role; }
+      });
+      return parsed;
     }
-    const parsed = JSON.parse(saved);
-    // Eksik alanları tamamla
-    Object.keys(DEFAULT_DB).forEach(k => {
-      if (!(k in parsed)) parsed[k] = DEFAULT_DB[k];
-    });
-    // DEFAULT_DB'deki admin her zaman var olsun (cihazdan bağımsız)
-    DEFAULT_DB.users.forEach(defUser => {
-      const exists = parsed.users.find(u => u.tc === defUser.tc);
-      if (!exists) parsed.users.push(JSON.parse(JSON.stringify(defUser)));
-      else {
-        // Şifre ve rol güncelle (sabit admin bilgileri korunsun)
-        exists.pass = defUser.pass;
-        exists.role = defUser.role;
-      }
-    });
-    return parsed;
-  } catch(e) { console.warn('DB yüklenemedi, varsayılan kullanılıyor.'); }
+  } catch(e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DB));
 }
 
 function saveDB() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(DB)); }
-  catch(e) { console.warn('DB kaydedilemedi:', e); }
+  // Hem localStorage'a hem Firebase'e kaydet
+  try { localStorage.setItem(LS_KEY, JSON.stringify(DB)); localStorage.setItem(LS_KEY+'_version','2'); }
+  catch(e) {}
+  fbSet('/data', DB); // Firebase'e asenkron yaz
 }
 
-// DB'yi yükle
+// Firebase'den güncel veriyi çek ve DB'yi güncelle
+async function syncFromFirebase() {
+  try {
+    const data = await fbGet('/data');
+    if (data && typeof data === 'object') {
+      Object.keys(DEFAULT_DB).forEach(k => { if(!(k in data)) data[k]=DEFAULT_DB[k]; });
+      // Admin her zaman var olsun
+      DEFAULT_DB.users.forEach(defUser => {
+        const exists = data.users.find(u=>u.tc===defUser.tc);
+        if(!exists) data.users.push(JSON.parse(JSON.stringify(defUser)));
+        else { exists.pass=defUser.pass; exists.role=defUser.role; }
+      });
+      // DB'yi güncelle
+      Object.keys(data).forEach(k => { DB[k] = data[k]; });
+      localStorage.setItem(LS_KEY, JSON.stringify(DB));
+      localStorage.setItem(LS_KEY+'_version','2');
+      console.log('Firebase senkronizasyonu tamamlandı.');
+    }
+  } catch(e) { console.warn('Firebase sync hatası:', e); }
+}
+
+// DB'yi yükle (localStorage'dan hızlı başlat)
 const DB = loadDB();
+
+// Sayfa açılınca Firebase'den güncel veriyi çek
+window.addEventListener('load', () => {
+  syncFromFirebase();
+  // Her 30 saniyede bir senkronize et (başka cihazdan değişiklik olursa)
+  setInterval(syncFromFirebase, 30000);
+});
 
 let currentUser = null;
 let currentRole = null;
@@ -1405,27 +1445,34 @@ function selectRole(role) {
 }
 
 // ===== AUTH =====
-function doLogin() {
+async function doLogin() {
   const tc   = document.getElementById('login-tc').value.trim();
   const pass = document.getElementById('login-pass').value.trim();
   const err  = document.getElementById('login-error');
 
+  // Giriş butonunu devre dışı bırak, yükleniyor göster
+  err.style.display='none';
+  err.textContent='';
+  const btn = document.querySelector('#screen-login .btn-primary');
+  if(btn){ btn.disabled=true; btn.textContent='Kontrol ediliyor...'; }
+
+  // Önce Firebase'den güncel veriyi çek
+  await syncFromFirebase();
+
+  if(btn){ btn.disabled=false; btn.textContent='Giriş Yap'; }
+
   const user = DB.users.find(u => u.tc === tc && u.pass === pass);
 
-  // Kullanıcı bulunamadı
   if (!user) {
     err.textContent = 'TC veya şifre hatalı.';
     err.style.display = 'block';
     return;
   }
-
-  // Rol uyuşmazlığı: sakin yönetici girişi yapmaya çalışıyor
   if (currentRole === 'admin' && user.role !== 'admin') {
     err.textContent = 'Bu hesap yönetici değil. Sakin girişini kullanın.';
     err.style.display = 'block';
     return;
   }
-  // Rol uyuşmazlığı: yönetici sakin girişi yapmaya çalışıyor
   if (currentRole === 'resident' && user.role !== 'resident') {
     err.textContent = 'Bu hesap sakin değil. Yönetici girişini kullanın.';
     err.style.display = 'block';
@@ -1433,7 +1480,6 @@ function doLogin() {
   }
 
   err.style.display = 'none';
-  // Formu temizle
   document.getElementById('login-tc').value   = '';
   document.getElementById('login-pass').value = '';
 
@@ -1514,8 +1560,7 @@ function doRegister() {
   });
   showToast(currentRegRole === 'admin' ? 'Yönetici kaydı oluşturuldu.' : 'Sakin kaydı oluşturuldu.');
   saveDB();
-  showScreen('screen-role');
-}
+  showScreen('screen-role');}
 
 function logout() {
   currentUser = null; currentRole = null;
